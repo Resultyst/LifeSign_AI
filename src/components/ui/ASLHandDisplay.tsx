@@ -8,14 +8,13 @@ interface ASLHandDisplayProps {
   className?: string;
 }
 
-// Individual finger component with joints and nail
+// Realistic finger with proper segments and natural curvature
 function Finger({
   height,
   width,
   opacity,
   bend,
   rotation = 0,
-  showNail = true,
   className,
 }: {
   height: number;
@@ -23,99 +22,154 @@ function Finger({
   opacity: number;
   bend: number;
   rotation?: number;
-  showNail?: boolean;
   className?: string;
 }) {
-  const jointHeight = height * 0.33;
-  const nailSize = width * 0.7;
+  // Anatomically correct segment proportions
+  const proximalH = height * 0.42; // Base segment (longest)
+  const middleH = height * 0.32;   // Middle segment
+  const distalH = height * 0.26;   // Tip segment (shortest)
+  const nailW = width * 0.72;
+  const nailH = width * 0.55;
 
-  // Calculate joint positions based on bend
-  const joint1Bend = bend * 0.4;
-  const joint2Bend = bend * 0.35;
-  const joint3Bend = bend * 0.25;
+  // Natural bend distribution across joints
+  const mcp = bend * 0.45;  // Base joint
+  const pip = bend * 0.35;  // Middle joint  
+  const dip = bend * 0.20;  // Tip joint
 
   return (
     <div
-      className={cn("relative flex flex-col items-center transition-all duration-300", className)}
+      className={cn("relative transition-all duration-300 ease-out", className)}
       style={{
         opacity,
         transform: `rotate(${rotation}deg)`,
         transformOrigin: "bottom center",
       }}
     >
-      {/* Base segment (connects to palm) */}
+      {/* Proximal phalanx (base segment) */}
       <div
-        className="relative"
         style={{
-          transform: `rotate(${joint1Bend}deg)`,
+          transform: `rotateX(${mcp}deg)`,
           transformOrigin: "bottom center",
+          perspective: "100px",
         }}
       >
         <div
-          className="bg-gradient-to-b from-amber-200 via-amber-250 to-amber-300 dark:from-amber-500 dark:via-amber-550 dark:to-amber-600 rounded-sm shadow-sm"
-          style={{
-            width,
-            height: jointHeight,
-            borderRadius: `${width * 0.3}px ${width * 0.3}px ${width * 0.2}px ${width * 0.2}px`,
-          }}
-        />
-        {/* Joint line */}
-        <div
-          className="absolute w-full bg-amber-400/40 dark:bg-amber-700/50"
-          style={{ height: 1, bottom: 0 }}
-        />
-
-        {/* Middle segment */}
-        <div
           className="relative"
           style={{
-            transform: `rotate(${joint2Bend}deg)`,
+            width,
+            height: proximalH,
+            background: "linear-gradient(135deg, #e8beac 0%, #d4a088 40%, #c8917a 100%)",
+            borderRadius: `${width * 0.35}px ${width * 0.35}px ${width * 0.25}px ${width * 0.25}px`,
+            boxShadow: "inset -2px 0 3px rgba(0,0,0,0.08), inset 2px 0 3px rgba(255,255,255,0.15)",
+          }}
+        >
+          {/* Knuckle crease */}
+          <div
+            className="absolute w-full"
+            style={{
+              height: 2,
+              bottom: 0,
+              background: "linear-gradient(90deg, transparent 10%, rgba(139,90,70,0.3) 50%, transparent 90%)",
+            }}
+          />
+          {/* Side shading */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(90deg, rgba(0,0,0,0.05) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.05) 100%)",
+              borderRadius: "inherit",
+            }}
+          />
+        </div>
+
+        {/* Middle phalanx */}
+        <div
+          style={{
+            transform: `rotateX(${pip}deg)`,
             transformOrigin: "bottom center",
           }}
         >
           <div
-            className="bg-gradient-to-b from-amber-200 via-amber-200 to-amber-300 dark:from-amber-500 dark:to-amber-600 rounded-sm shadow-sm"
-            style={{
-              width,
-              height: jointHeight,
-              borderRadius: `${width * 0.25}px`,
-            }}
-          />
-          {/* Joint line */}
-          <div
-            className="absolute w-full bg-amber-400/40 dark:bg-amber-700/50"
-            style={{ height: 1, bottom: 0 }}
-          />
-
-          {/* Tip segment with nail */}
-          <div
             className="relative"
             style={{
-              transform: `rotate(${joint3Bend}deg)`,
+              width: width * 0.95,
+              height: middleH,
+              marginLeft: width * 0.025,
+              background: "linear-gradient(135deg, #ecc4b2 0%, #daa892 40%, #cc9680 100%)",
+              borderRadius: `${width * 0.3}px`,
+              boxShadow: "inset -1px 0 2px rgba(0,0,0,0.06), inset 1px 0 2px rgba(255,255,255,0.12)",
+            }}
+          >
+            {/* Joint crease */}
+            <div
+              className="absolute w-full"
+              style={{
+                height: 1.5,
+                bottom: 0,
+                background: "linear-gradient(90deg, transparent 15%, rgba(139,90,70,0.25) 50%, transparent 85%)",
+              }}
+            />
+          </div>
+
+          {/* Distal phalanx (fingertip) */}
+          <div
+            style={{
+              transform: `rotateX(${dip}deg)`,
               transformOrigin: "bottom center",
             }}
           >
             <div
-              className="bg-gradient-to-b from-amber-100 to-amber-200 dark:from-amber-400 dark:to-amber-500 shadow-sm"
+              className="relative"
               style={{
-                width,
-                height: jointHeight * 0.9,
-                borderRadius: `${width * 0.5}px ${width * 0.5}px ${width * 0.3}px ${width * 0.3}px`,
+                width: width * 0.88,
+                height: distalH,
+                marginLeft: width * 0.06,
+                background: "linear-gradient(135deg, #f0caba 0%, #e0b09a 50%, #d4a088 100%)",
+                borderRadius: `${width * 0.5}px ${width * 0.5}px ${width * 0.35}px ${width * 0.35}px`,
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
               }}
-            />
-            {/* Nail */}
-            {showNail && (
+            >
+              {/* Fingertip pad highlight */}
               <div
-                className="absolute bg-gradient-to-b from-pink-100 to-pink-200 dark:from-pink-300 dark:to-pink-400 border border-pink-300/50 dark:border-pink-500/50"
+                className="absolute"
                 style={{
-                  width: nailSize,
-                  height: nailSize * 0.8,
-                  top: 2,
-                  left: (width - nailSize) / 2,
-                  borderRadius: `${nailSize * 0.3}px ${nailSize * 0.3}px ${nailSize * 0.15}px ${nailSize * 0.15}px`,
+                  width: "60%",
+                  height: "40%",
+                  bottom: "15%",
+                  left: "20%",
+                  background: "radial-gradient(ellipse, rgba(255,220,200,0.4) 0%, transparent 70%)",
+                  borderRadius: "50%",
                 }}
               />
-            )}
+              
+              {/* Fingernail */}
+              <div
+                className="absolute"
+                style={{
+                  width: nailW,
+                  height: nailH,
+                  top: 2,
+                  left: (width * 0.88 - nailW) / 2,
+                  background: "linear-gradient(180deg, #fce4e0 0%, #f5d0c8 40%, #efc4ba 100%)",
+                  borderRadius: `${nailW * 0.35}px ${nailW * 0.35}px ${nailW * 0.15}px ${nailW * 0.15}px`,
+                  boxShadow: "inset 0 1px 2px rgba(255,255,255,0.6), 0 0.5px 1px rgba(0,0,0,0.1)",
+                  border: "0.5px solid rgba(200,150,140,0.3)",
+                }}
+              >
+                {/* Nail lunula (half-moon) */}
+                <div
+                  className="absolute"
+                  style={{
+                    width: nailW * 0.5,
+                    height: nailH * 0.35,
+                    bottom: 1,
+                    left: nailW * 0.25,
+                    background: "rgba(255,255,255,0.5)",
+                    borderRadius: `0 0 ${nailW * 0.25}px ${nailW * 0.25}px`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -123,7 +177,7 @@ function Finger({
   );
 }
 
-// Thumb component (different structure - 2 joints)
+// Anatomically correct thumb
 function Thumb({
   height,
   width,
@@ -137,67 +191,108 @@ function Thumb({
   bend: number;
   rotation?: number;
 }) {
-  const jointHeight = height * 0.45;
-  const nailSize = width * 0.65;
+  const proximalH = height * 0.55;
+  const distalH = height * 0.45;
+  const thumbW = width * 1.15;
+  const nailW = thumbW * 0.65;
+  const nailH = thumbW * 0.45;
 
   return (
     <div
-      className="relative flex flex-col items-center transition-all duration-300"
+      className="relative transition-all duration-300 ease-out"
       style={{
         opacity,
         transform: `rotate(${rotation}deg)`,
         transformOrigin: "bottom right",
       }}
     >
-      {/* Base segment */}
+      {/* Proximal phalanx */}
       <div
-        className="relative"
         style={{
-          transform: `rotate(${bend * 0.5}deg)`,
+          transform: `rotateX(${bend * 0.6}deg)`,
           transformOrigin: "bottom center",
         }}
       >
         <div
-          className="bg-gradient-to-b from-amber-200 to-amber-300 dark:from-amber-500 dark:to-amber-600 rounded-md shadow-sm"
-          style={{
-            width: width * 1.1,
-            height: jointHeight,
-            borderRadius: `${width * 0.35}px`,
-          }}
-        />
-        {/* Joint crease */}
-        <div
-          className="absolute w-full bg-amber-400/40 dark:bg-amber-700/50"
-          style={{ height: 1.5, bottom: 0 }}
-        />
-
-        {/* Tip segment with nail */}
-        <div
           className="relative"
           style={{
-            transform: `rotate(${bend * 0.5}deg)`,
+            width: thumbW,
+            height: proximalH,
+            background: "linear-gradient(135deg, #e8beac 0%, #d8a890 40%, #cc9680 100%)",
+            borderRadius: `${thumbW * 0.4}px`,
+            boxShadow: "inset -2px 0 4px rgba(0,0,0,0.08), inset 2px 0 3px rgba(255,255,255,0.12)",
+          }}
+        >
+          {/* Thumb crease */}
+          <div
+            className="absolute w-full"
+            style={{
+              height: 2,
+              bottom: 0,
+              background: "linear-gradient(90deg, transparent 5%, rgba(139,90,70,0.35) 50%, transparent 95%)",
+            }}
+          />
+        </div>
+
+        {/* Distal phalanx */}
+        <div
+          style={{
+            transform: `rotateX(${bend * 0.4}deg)`,
             transformOrigin: "bottom center",
           }}
         >
           <div
-            className="bg-gradient-to-b from-amber-100 to-amber-200 dark:from-amber-400 dark:to-amber-500 shadow-sm"
+            className="relative"
             style={{
-              width: width * 1.1,
-              height: jointHeight * 0.85,
-              borderRadius: `${width * 0.5}px ${width * 0.5}px ${width * 0.3}px ${width * 0.3}px`,
+              width: thumbW * 0.92,
+              height: distalH,
+              marginLeft: thumbW * 0.04,
+              background: "linear-gradient(135deg, #f0caba 0%, #e4b8a0 50%, #d8a890 100%)",
+              borderRadius: `${thumbW * 0.5}px ${thumbW * 0.5}px ${thumbW * 0.35}px ${thumbW * 0.35}px`,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
             }}
-          />
-          {/* Nail */}
-          <div
-            className="absolute bg-gradient-to-b from-pink-100 to-pink-200 dark:from-pink-300 dark:to-pink-400 border border-pink-300/50 dark:border-pink-500/50"
-            style={{
-              width: nailSize,
-              height: nailSize * 0.75,
-              top: 2,
-              left: (width * 1.1 - nailSize) / 2,
-              borderRadius: `${nailSize * 0.3}px ${nailSize * 0.3}px ${nailSize * 0.15}px ${nailSize * 0.15}px`,
-            }}
-          />
+          >
+            {/* Thumb pad highlight */}
+            <div
+              className="absolute"
+              style={{
+                width: "55%",
+                height: "35%",
+                bottom: "20%",
+                left: "22%",
+                background: "radial-gradient(ellipse, rgba(255,220,200,0.35) 0%, transparent 70%)",
+                borderRadius: "50%",
+              }}
+            />
+            
+            {/* Thumbnail */}
+            <div
+              className="absolute"
+              style={{
+                width: nailW,
+                height: nailH,
+                top: 2,
+                left: (thumbW * 0.92 - nailW) / 2,
+                background: "linear-gradient(180deg, #fce4e0 0%, #f5d0c8 40%, #efc4ba 100%)",
+                borderRadius: `${nailW * 0.4}px ${nailW * 0.4}px ${nailW * 0.15}px ${nailW * 0.15}px`,
+                boxShadow: "inset 0 1px 2px rgba(255,255,255,0.6), 0 0.5px 1px rgba(0,0,0,0.1)",
+                border: "0.5px solid rgba(200,150,140,0.3)",
+              }}
+            >
+              {/* Nail lunula */}
+              <div
+                className="absolute"
+                style={{
+                  width: nailW * 0.45,
+                  height: nailH * 0.35,
+                  bottom: 1,
+                  left: nailW * 0.275,
+                  background: "rgba(255,255,255,0.5)",
+                  borderRadius: `0 0 ${nailW * 0.22}px ${nailW * 0.22}px`,
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -211,9 +306,9 @@ export function ASLHandDisplay({
   className,
 }: ASLHandDisplayProps) {
   const sizeConfig = {
-    sm: { container: "w-32 h-56", fingerW: 10, fingerH: 36, thumbH: 28, palmW: 44, palmH: 48, wristW: 36, wristH: 20, armW: 32, armH: 40 },
-    md: { container: "w-40 h-72", fingerW: 13, fingerH: 48, thumbH: 36, palmW: 56, palmH: 62, wristW: 46, wristH: 26, armW: 40, armH: 52 },
-    lg: { container: "w-52 h-88", fingerW: 16, fingerH: 62, thumbH: 46, palmW: 72, palmH: 80, wristW: 58, wristH: 32, armW: 50, armH: 65 },
+    sm: { container: "w-32 h-56", fingerW: 11, fingerH: 40, thumbH: 30, palmW: 48, palmH: 52, wristW: 40, wristH: 22, armW: 36, armH: 44 },
+    md: { container: "w-42 h-76", fingerW: 14, fingerH: 54, thumbH: 40, palmW: 62, palmH: 68, wristW: 52, wristH: 28, armW: 46, armH: 58 },
+    lg: { container: "w-56 h-96", fingerW: 18, fingerH: 70, thumbH: 52, palmW: 80, palmH: 88, wristW: 66, wristH: 36, armW: 58, armH: 72 },
   };
 
   const dims = sizeConfig[size];
@@ -242,11 +337,11 @@ export function ASLHandDisplay({
       case "point":
         return { height: baseHeight, opacity: 1, bend: 0 };
       case "down":
-        return { height: baseHeight * 0.35, opacity: 0.85, bend: 85 };
+        return { height: baseHeight * 0.35, opacity: 0.9, bend: 80 };
       case "bent":
-        return { height: baseHeight * 0.7, opacity: 0.95, bend: 45 };
+        return { height: baseHeight * 0.72, opacity: 0.95, bend: 42 };
       case "out":
-        return { height: baseHeight * 0.85, opacity: 1, bend: 15 };
+        return { height: baseHeight * 0.88, opacity: 1, bend: 12 };
       default:
         return { height: baseHeight, opacity: 1, bend: 0 };
     }
@@ -255,23 +350,25 @@ export function ASLHandDisplay({
   const getThumbProps = (state: string, baseHeight: number) => {
     switch (state) {
       case "up":
-        return { height: baseHeight, opacity: 1, bend: 0, rotation: -30 };
+        return { height: baseHeight, opacity: 1, bend: 0, rotation: -28 };
       case "out":
-        return { height: baseHeight, opacity: 1, bend: 10, rotation: -60 };
+        return { height: baseHeight, opacity: 1, bend: 8, rotation: -55 };
       case "across":
-        return { height: baseHeight * 0.75, opacity: 0.9, bend: 25, rotation: 20 };
+        return { height: baseHeight * 0.78, opacity: 0.92, bend: 22, rotation: 18 };
       case "tucked":
-        return { height: baseHeight * 0.5, opacity: 0.7, bend: 50, rotation: 45 };
+        return { height: baseHeight * 0.52, opacity: 0.75, bend: 48, rotation: 42 };
       default:
-        return { height: baseHeight, opacity: 1, bend: 0, rotation: -30 };
+        return { height: baseHeight, opacity: 1, bend: 0, rotation: -28 };
     }
   };
 
   const indexProps = getFingerProps(fingers.index, dims.fingerH);
-  const middleProps = getFingerProps(fingers.middle, dims.fingerH * 1.1);
-  const ringProps = getFingerProps(fingers.ring, dims.fingerH * 0.95);
-  const pinkyProps = getFingerProps(fingers.pinky === "out" ? "out" : fingers.pinky, dims.fingerH * 0.8);
+  const middleProps = getFingerProps(fingers.middle, dims.fingerH * 1.08);
+  const ringProps = getFingerProps(fingers.ring, dims.fingerH * 0.97);
+  const pinkyProps = getFingerProps(fingers.pinky === "out" ? "out" : fingers.pinky, dims.fingerH * 0.82);
   const thumbProps = getThumbProps(fingers.thumb, dims.thumbH);
+
+  const handBottom = dims.armH + dims.wristH;
 
   return (
     <div
@@ -284,181 +381,277 @@ export function ASLHandDisplay({
       )}
       style={{ transform: `rotate(${rotation}deg)` }}
     >
+      {/* Drop shadow under hand */}
+      <div
+        className="absolute"
+        style={{
+          width: dims.palmW * 0.8,
+          height: 12,
+          bottom: -6,
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "radial-gradient(ellipse, rgba(0,0,0,0.15) 0%, transparent 70%)",
+          borderRadius: "50%",
+          filter: "blur(4px)",
+        }}
+      />
+
       {/* Arm base */}
       <div
-        className="absolute bg-gradient-to-b from-amber-300 via-amber-350 to-amber-400 dark:from-amber-700 dark:via-amber-750 dark:to-amber-800 shadow-md"
+        className="absolute"
         style={{
           width: dims.armW,
           height: dims.armH,
           bottom: 0,
           left: "50%",
           transform: "translateX(-50%)",
-          borderRadius: "10% 10% 0 0",
-          border: "1px solid rgba(180, 130, 80, 0.25)",
+          background: "linear-gradient(180deg, #d8a890 0%, #cc9680 30%, #c48c72 100%)",
+          borderRadius: "12% 12% 0 0",
+          boxShadow: "inset -3px 0 6px rgba(0,0,0,0.08), inset 3px 0 4px rgba(255,255,255,0.08)",
+          border: "1px solid rgba(160,100,80,0.2)",
+          borderBottom: "none",
         }}
       >
-        {/* Arm shading for depth */}
+        {/* Arm highlight */}
         <div 
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-          style={{ borderRadius: "10% 10% 0 0" }}
+          className="absolute"
+          style={{
+            width: "30%",
+            height: "100%",
+            left: "35%",
+            background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 60%)",
+            borderRadius: "inherit",
+          }}
         />
+        {/* Tendon lines */}
+        <div className="absolute w-full h-full opacity-20">
+          <div className="absolute" style={{ width: 1, height: "70%", top: "15%", left: "30%", background: "linear-gradient(180deg, transparent, rgba(100,60,40,0.3), transparent)" }} />
+          <div className="absolute" style={{ width: 1, height: "70%", top: "15%", left: "50%", background: "linear-gradient(180deg, transparent, rgba(100,60,40,0.3), transparent)" }} />
+          <div className="absolute" style={{ width: 1, height: "70%", top: "15%", left: "70%", background: "linear-gradient(180deg, transparent, rgba(100,60,40,0.3), transparent)" }} />
+        </div>
       </div>
 
       {/* Wrist */}
       <div
-        className="absolute bg-gradient-to-b from-amber-250 via-amber-300 to-amber-350 dark:from-amber-650 dark:via-amber-700 dark:to-amber-750 shadow-md"
+        className="absolute"
         style={{
           width: dims.wristW,
           height: dims.wristH,
-          bottom: dims.armH - 4,
+          bottom: dims.armH - 3,
           left: "50%",
           transform: "translateX(-50%)",
-          borderRadius: "20% 20% 15% 15%",
-          border: "1px solid rgba(180, 130, 80, 0.2)",
+          background: "linear-gradient(180deg, #e4b8a0 0%, #d8a890 50%, #d0a085 100%)",
+          borderRadius: "22% 22% 18% 18%",
+          boxShadow: "inset -2px 0 5px rgba(0,0,0,0.06), inset 2px 0 3px rgba(255,255,255,0.1)",
+          border: "1px solid rgba(160,100,80,0.15)",
         }}
       >
-        {/* Wrist bone indication */}
+        {/* Wrist bones (ulna/radius) */}
         <div 
-          className="absolute bg-amber-400/20 dark:bg-amber-600/30 rounded-full"
+          className="absolute rounded-full"
           style={{
-            width: dims.wristW * 0.25,
-            height: dims.wristH * 0.5,
-            left: dims.wristW * 0.15,
+            width: dims.wristW * 0.18,
+            height: dims.wristH * 0.6,
+            left: dims.wristW * 0.12,
             top: "50%",
             transform: "translateY(-50%)",
+            background: "radial-gradient(ellipse, rgba(180,120,100,0.25) 0%, transparent 70%)",
           }}
         />
         <div 
-          className="absolute bg-amber-400/20 dark:bg-amber-600/30 rounded-full"
+          className="absolute rounded-full"
           style={{
-            width: dims.wristW * 0.25,
-            height: dims.wristH * 0.5,
-            right: dims.wristW * 0.15,
+            width: dims.wristW * 0.18,
+            height: dims.wristH * 0.6,
+            right: dims.wristW * 0.12,
             top: "50%",
             transform: "translateY(-50%)",
+            background: "radial-gradient(ellipse, rgba(180,120,100,0.25) 0%, transparent 70%)",
+          }}
+        />
+        {/* Wrist crease */}
+        <div
+          className="absolute w-full"
+          style={{
+            height: 1.5,
+            top: "75%",
+            background: "linear-gradient(90deg, transparent 10%, rgba(139,90,70,0.2) 50%, transparent 90%)",
           }}
         />
       </div>
 
-      {/* Palm with details */}
+      {/* Palm */}
       <div
-        className="absolute bg-gradient-to-br from-amber-200 via-amber-250 to-amber-300 dark:from-amber-600 dark:via-amber-650 dark:to-amber-700 shadow-lg"
+        className="absolute"
         style={{
           width: dims.palmW,
           height: dims.palmH,
-          bottom: dims.armH + dims.wristH - 8,
+          bottom: handBottom - 6,
           left: "50%",
           transform: "translateX(-50%)",
-          borderRadius: "35% 35% 45% 45%",
-          border: "1px solid rgba(180, 130, 80, 0.3)",
+          background: "linear-gradient(145deg, #f0caba 0%, #e8beac 25%, #daa892 60%, #d0a085 100%)",
+          borderRadius: "38% 38% 48% 48%",
+          boxShadow: "inset -4px 0 8px rgba(0,0,0,0.06), inset 4px 0 6px rgba(255,255,255,0.1), 0 2px 8px rgba(0,0,0,0.1)",
+          border: "1px solid rgba(160,100,80,0.2)",
         }}
       >
-        {/* Palm lines for realism */}
+        {/* Palm lines */}
         <svg
-          className="absolute inset-0 w-full h-full opacity-20 dark:opacity-30"
+          className="absolute inset-0 w-full h-full"
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
+          style={{ opacity: 0.18 }}
         >
+          {/* Heart line */}
           <path
-            d="M 20 35 Q 50 30 80 40"
-            stroke="currentColor"
-            strokeWidth="1"
+            d="M 18 28 Q 35 24 52 26 Q 70 28 82 35"
+            stroke="#8B5A46"
+            strokeWidth="1.2"
             fill="none"
-            className="text-amber-700"
+            strokeLinecap="round"
           />
+          {/* Head line */}
           <path
-            d="M 25 55 Q 50 50 75 55"
-            stroke="currentColor"
-            strokeWidth="1"
+            d="M 20 45 Q 40 42 55 44 Q 72 46 78 50"
+            stroke="#8B5A46"
+            strokeWidth="1.1"
             fill="none"
-            className="text-amber-700"
+            strokeLinecap="round"
           />
+          {/* Life line */}
           <path
-            d="M 30 70 Q 50 68 70 72"
-            stroke="currentColor"
+            d="M 25 25 Q 22 40 24 55 Q 28 72 35 82"
+            stroke="#8B5A46"
+            strokeWidth="1.3"
+            fill="none"
+            strokeLinecap="round"
+          />
+          {/* Fate line */}
+          <path
+            d="M 50 85 Q 48 70 50 55 Q 52 45 50 38"
+            stroke="#8B5A46"
             strokeWidth="0.8"
             fill="none"
-            className="text-amber-700"
+            strokeLinecap="round"
           />
         </svg>
         
-        {/* Thumb muscle (thenar eminence) */}
+        {/* Thenar eminence (thumb muscle) */}
         <div 
-          className="absolute bg-gradient-to-br from-amber-300/40 to-transparent rounded-full"
+          className="absolute"
           style={{
-            width: dims.palmW * 0.4,
-            height: dims.palmH * 0.35,
-            left: -2,
-            bottom: dims.palmH * 0.25,
+            width: dims.palmW * 0.42,
+            height: dims.palmH * 0.38,
+            left: -3,
+            bottom: dims.palmH * 0.22,
+            background: "radial-gradient(ellipse at 30% 50%, rgba(220,160,140,0.4) 0%, transparent 65%)",
+            borderRadius: "50%",
           }}
         />
+        
+        {/* Hypothenar (pinky side muscle) */}
+        <div 
+          className="absolute"
+          style={{
+            width: dims.palmW * 0.3,
+            height: dims.palmH * 0.32,
+            right: -2,
+            bottom: dims.palmH * 0.25,
+            background: "radial-gradient(ellipse at 70% 50%, rgba(200,140,120,0.25) 0%, transparent 60%)",
+            borderRadius: "50%",
+          }}
+        />
+
+        {/* Knuckle bumps at top */}
+        <div className="absolute w-full flex justify-center" style={{ top: -2, gap: dims.fingerW * 0.2 }}>
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              style={{
+                width: dims.fingerW * 0.9,
+                height: dims.fingerW * 0.5,
+                background: "radial-gradient(ellipse at 50% 80%, rgba(200,140,120,0.35) 0%, transparent 70%)",
+                borderRadius: "50%",
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Thumb */}
       <div
         className="absolute"
         style={{
-          bottom: dims.armH + dims.wristH + dims.palmH * 0.45,
-          left: `calc(50% - ${dims.palmW / 2 + 4}px)`,
+          bottom: handBottom + dims.palmH * 0.38,
+          left: `calc(50% - ${dims.palmW / 2 + 6}px)`,
         }}
       >
         <Thumb
           height={thumbProps.height}
-          width={dims.fingerW * 1.2}
+          width={dims.fingerW * 1.25}
           opacity={thumbProps.opacity}
           bend={thumbProps.bend}
           rotation={thumbProps.rotation}
         />
       </div>
 
-      {/* Fingers */}
+      {/* Fingers container */}
       <div
         className="absolute flex items-end justify-center"
         style={{
-          bottom: dims.armH + dims.wristH + dims.palmH - 4,
+          bottom: handBottom + dims.palmH - 5,
           left: "50%",
           transform: "translateX(-50%)",
-          gap: 2,
+          gap: dims.fingerW * 0.15,
         }}
       >
-        {/* Index */}
+        {/* Index finger */}
         <Finger
           height={indexProps.height}
           width={dims.fingerW}
           opacity={indexProps.opacity}
           bend={indexProps.bend}
-          rotation={-4}
+          rotation={-3}
         />
-        {/* Middle */}
+        {/* Middle finger (tallest) */}
         <Finger
           height={middleProps.height}
-          width={dims.fingerW}
+          width={dims.fingerW * 1.02}
           opacity={middleProps.opacity}
           bend={middleProps.bend}
           rotation={0}
         />
-        {/* Ring */}
+        {/* Ring finger */}
         <Finger
           height={ringProps.height}
-          width={dims.fingerW}
+          width={dims.fingerW * 0.98}
           opacity={ringProps.opacity}
           bend={ringProps.bend}
-          rotation={3}
+          rotation={2}
         />
-        {/* Pinky */}
+        {/* Pinky finger (smallest) */}
         <Finger
           height={pinkyProps.height}
-          width={dims.fingerW * 0.85}
+          width={dims.fingerW * 0.82}
           opacity={pinkyProps.opacity}
           bend={pinkyProps.bend}
-          rotation={7}
+          rotation={5}
         />
       </div>
 
       {/* Letter indicator badge */}
       {letter && letter !== " " && (
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-primary to-primary/90 rounded-lg shadow-md border border-primary-foreground/20">
-          <span className="text-sm font-bold text-primary-foreground">{letter}</span>
+        <div 
+          className="absolute px-3 py-1.5 rounded-xl shadow-lg"
+          style={{
+            bottom: -8,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.85) 100%)",
+            border: "1px solid hsl(var(--primary-foreground) / 0.2)",
+          }}
+        >
+          <span className="text-sm font-bold text-primary-foreground tracking-wide">{letter}</span>
         </div>
       )}
     </div>
