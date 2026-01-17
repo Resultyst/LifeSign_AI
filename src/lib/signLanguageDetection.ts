@@ -28,7 +28,7 @@ export interface MedicalGesture {
 export const SAMPLE_SIGNS: MedicalGesture[] = [
   {
     id: "help",
-    name: "Help / Emergency",
+    name: "Help",
     meaning: "I need help immediately",
     description: "Wave both hands or show open palm repeatedly",
     category: "emergency",
@@ -52,31 +52,31 @@ export const SAMPLE_SIGNS: MedicalGesture[] = [
   },
   {
     id: "medicine",
-    name: "Medicine / Pills",
-    meaning: "I need medicine / medication question",
+    name: "Medicine",
+    meaning: "I need medicine",
     description: "Make pill-taking gesture (thumb to mouth)",
     category: "medical",
     icon: "pill",
   },
   {
     id: "yes",
-    name: "Yes / Okay",
-    meaning: "Yes / I understand / I'm okay",
+    name: "Yes",
+    meaning: "Yes, I understand",
     description: "Thumbs up gesture",
     category: "general",
     icon: "thumbs-up",
   },
   {
     id: "no",
-    name: "No / Problem",
-    meaning: "No / Not good / I have a problem",
+    name: "No",
+    meaning: "No, I have a problem",
     description: "Thumbs down or shake head",
     category: "general",
     icon: "thumbs-down",
   },
   {
     id: "dizzy",
-    name: "Dizzy / Faint",
+    name: "Dizzy",
     meaning: "I feel dizzy or faint",
     description: "Circular motion near head with finger",
     category: "medical",
@@ -103,50 +103,50 @@ interface MedicalGestureMapping {
 
 const MEDICAL_GESTURE_MAPPINGS: Record<string, MedicalGestureMapping> = {
   Thumb_Up: {
-    name: "Yes / I'm Okay",
-    meaning: "Yes, I understand / I'm okay / Feeling better",
+    name: "Yes",
+    meaning: "Yes, I understand",
     category: "general",
     icon: "thumbs-up",
     alternativeMeanings: ["Confirm", "Agree", "Good"],
   },
   Thumb_Down: {
-    name: "No / Problem",
-    meaning: "No / Not good / I have a problem / Pain worsening",
+    name: "No",
+    meaning: "No, I have a problem",
     category: "medical",
     icon: "thumbs-down",
     alternativeMeanings: ["Disagree", "Bad", "Worse"],
   },
   Open_Palm: {
-    name: "Stop / Help Needed",
-    meaning: "Stop / I need help / Wait / Attention needed",
+    name: "Help Needed",
+    meaning: "I need help",
     category: "emergency",
     icon: "hand",
     alternativeMeanings: ["Hello", "Five", "Pause"],
   },
   Closed_Fist: {
-    name: "Pain / Hold",
-    meaning: "I'm in pain / Hold on / Cramping / Tightness",
+    name: "Pain",
+    meaning: "I'm in pain",
     category: "medical",
     icon: "heart-crack",
     alternativeMeanings: ["Wait", "Stop", "Tight feeling"],
   },
   Pointing_Up: {
-    name: "Urgent / Important",
-    meaning: "This is urgent / Pay attention / Important symptom",
+    name: "Urgent",
+    meaning: "This is urgent",
     category: "emergency",
     icon: "alert-triangle",
     alternativeMeanings: ["One", "Look here", "This area"],
   },
   Victory: {
-    name: "Two / Second Issue",
-    meaning: "Two symptoms / Second problem / Moderate pain (2/10)",
+    name: "Two",
+    meaning: "Two symptoms",
     category: "medical",
     icon: "hash",
     alternativeMeanings: ["Peace", "Okay", "Two"],
   },
   ILoveYou: {
-    name: "Thank You / Understood",
-    meaning: "Thank you / I appreciate it / Message received",
+    name: "Thank You",
+    meaning: "Thank you",
     category: "general",
     icon: "heart",
     alternativeMeanings: ["Love", "Thanks", "Appreciate"],
@@ -386,7 +386,7 @@ class SignLanguageDetector {
     
     if (isInMouthRegion && isThumbExtended && isHandNearFace && areFingersCurled) {
       return {
-        name: "Medicine / Pills",
+        name: "Medicine",
         meaning: "I need medicine",
         confidence: 78,
         category: "medical",
@@ -402,7 +402,7 @@ class SignLanguageDetector {
     
     if (isAtTemple && isWristLower && !isHandFlat) {
       return {
-        name: "Dizzy / Faint",
+        name: "Dizzy",
         meaning: "I feel dizzy or faint",
         confidence: 75,
         category: "medical",
