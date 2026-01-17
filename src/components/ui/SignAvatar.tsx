@@ -1,8 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
-import { Volume2, VolumeX, Hand, Sparkles, Play, Pause } from "lucide-react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { Volume2, VolumeX, Sparkles, Play, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { Button } from "./button";
+import { ASLHandDisplay } from "./ASLHandDisplay";
+import { messageToHandShapes, ASLHandShape } from "@/lib/aslFingerSpelling";
 
 interface SignAvatarProps {
   message?: string;
@@ -12,17 +14,7 @@ interface SignAvatarProps {
   autoSpeak?: boolean;
 }
 
-// Sign animation keyframes for different hand positions
-const signAnimations = [
-  { rotation: 0, scale: 1, translateY: 0 },
-  { rotation: -15, scale: 1.05, translateY: -5 },
-  { rotation: 10, scale: 0.95, translateY: 5 },
-  { rotation: -20, scale: 1.1, translateY: -10 },
-  { rotation: 15, scale: 1, translateY: 0 },
-  { rotation: -5, scale: 1.02, translateY: -3 },
-  { rotation: 20, scale: 0.98, translateY: 8 },
-  { rotation: 0, scale: 1, translateY: 0 },
-];
+const LETTER_DURATION_MS = 600; // Time to show each letter
 
 export function SignAvatar({
   message,
@@ -31,26 +23,39 @@ export function SignAvatar({
   signLanguage = "ASL",
   autoSpeak = true,
 }: SignAvatarProps) {
-  const [currentFrame, setCurrentFrame] = useState(0);
+  const [currentLetterIndex, setCurrentLetterIndex] = useState(0);
   const [showWordHighlight, setShowWordHighlight] = useState(0);
   const { speak, stop, isSpeaking, isSupported } = useTextToSpeech({
     rate: 0.85,
     pitch: 1.05,
   });
 
-  // Animate through signing frames
+  // Convert message to hand shapes
+  const handShapes = useMemo(() => {
+    if (!message) return [];
+    return messageToHandShapes(message);
+  }, [message]);
+
+  const currentHandShape: ASLHandShape | null = handShapes[currentLetterIndex] || null;
+
+  // Animate through fingerspelling
   useEffect(() => {
-    if (!isAnimating) {
-      setCurrentFrame(0);
+    if (!isAnimating || handShapes.length === 0) {
+      setCurrentLetterIndex(0);
       return;
     }
 
     const interval = setInterval(() => {
-      setCurrentFrame((prev) => (prev + 1) % signAnimations.length);
-    }, 200);
+      setCurrentLetterIndex((prev) => {
+        if (prev >= handShapes.length - 1) {
+          return 0; // Loop back
+        }
+        return prev + 1;
+      });
+    }, LETTER_DURATION_MS);
 
     return () => clearInterval(interval);
-  }, [isAnimating]);
+  }, [isAnimating, handShapes.length]);
 
   // Animate word highlighting in subtitle
   useEffect(() => {
@@ -60,17 +65,18 @@ export function SignAvatar({
     }
 
     const words = message.split(" ");
-    const wordInterval = 3000 / words.length; // Distribute across animation duration
+    const totalDuration = handShapes.length * LETTER_DURATION_MS;
+    const wordInterval = totalDuration / words.length;
 
     const interval = setInterval(() => {
       setShowWordHighlight((prev) => {
-        if (prev >= words.length - 1) return prev;
+        if (prev >= words.length - 1) return 0;
         return prev + 1;
       });
     }, wordInterval);
 
     return () => clearInterval(interval);
-  }, [message, isAnimating]);
+  }, [message, isAnimating, handShapes.length]);
 
   // Auto-speak when message changes
   useEffect(() => {
@@ -92,16 +98,18 @@ export function SignAvatar({
     }
   }, [isSpeaking, message, speak, stop]);
 
-  const currentAnimation = signAnimations[currentFrame];
   const words = message?.split(" ") || [];
+  const progress = handShapes.length > 0 
+    ? ((currentLetterIndex + 1) / handShapes.length) * 100 
+    : 0;
 
   return (
     <div className={cn("space-y-4", className)}>
       {/* Avatar Display */}
-      <div className="avatar-display relative flex items-center justify-center bg-gradient-to-br from-primary/15 via-primary/5 to-accent/10">
+      <div className="avatar-display relative flex flex-col items-center justify-center bg-gradient-to-br from-primary/15 via-primary/5 to-accent/10 min-h-[280px]">
         {/* Animated background particles */}
         {isAnimating && (
-          <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
@@ -118,65 +126,39 @@ export function SignAvatar({
         )}
 
         <div className="flex flex-col items-center gap-4 p-6 relative z-10">
-          {/* Animated Avatar Container */}
+          {/* Hand Shape Display */}
           <div className="relative">
             {/* Outer glow ring */}
             <div
               className={cn(
-                "absolute -inset-4 rounded-full transition-all duration-500",
+                "absolute -inset-6 rounded-full transition-all duration-500",
                 isAnimating
                   ? "bg-primary/20 animate-pulse"
                   : "bg-primary/5"
               )}
             />
 
-            {/* Secondary ring */}
-            <div
-              className={cn(
-                "absolute -inset-2 rounded-full border-2 transition-all duration-300",
-                isAnimating
-                  ? "border-primary/40 scale-105"
-                  : "border-primary/10"
-              )}
-            />
-
-            {/* Main avatar circle */}
-            <div
-              className={cn(
-                "relative w-32 h-32 rounded-full flex items-center justify-center",
-                "bg-gradient-to-br from-primary/30 to-accent/20",
-                "border-4 border-primary/30 shadow-lg",
-                "transition-all duration-200"
-              )}
-              style={{
-                transform: isAnimating
-                  ? `rotate(${currentAnimation.rotation}deg) scale(${currentAnimation.scale}) translateY(${currentAnimation.translateY}px)`
-                  : "none",
-              }}
-            >
-              {/* Hand icon with animation */}
-              <Hand
-                className={cn(
-                  "w-16 h-16 text-primary transition-all duration-150",
-                  isAnimating && "drop-shadow-lg"
-                )}
-                strokeWidth={1.5}
-                style={{
-                  transform: isAnimating
-                    ? `rotate(${-currentAnimation.rotation * 1.5}deg)`
-                    : "none",
-                }}
+            {/* ASL Hand Display */}
+            <div className={cn(
+              "relative bg-gradient-to-b from-background/80 to-background/40 rounded-2xl p-4 backdrop-blur-sm",
+              "border-2 transition-all duration-300",
+              isAnimating ? "border-primary/40 shadow-lg" : "border-primary/10"
+            )}>
+              <ASLHandDisplay
+                handShape={currentHandShape}
+                isAnimating={isAnimating}
+                size="lg"
               />
 
-              {/* Signing indicator sparkles */}
+              {/* Sparkle effects when animating */}
               {isAnimating && (
                 <>
                   <Sparkles
-                    className="absolute -top-1 -right-1 w-5 h-5 text-accent animate-ping"
+                    className="absolute -top-2 -right-2 w-5 h-5 text-accent animate-ping"
                     style={{ animationDuration: "1.5s" }}
                   />
                   <Sparkles
-                    className="absolute -bottom-1 -left-1 w-4 h-4 text-primary animate-ping"
+                    className="absolute -bottom-2 -left-2 w-4 h-4 text-primary animate-ping"
                     style={{ animationDuration: "2s", animationDelay: "0.5s" }}
                   />
                 </>
@@ -184,11 +166,26 @@ export function SignAvatar({
             </div>
           </div>
 
+          {/* Progress bar */}
+          {isAnimating && handShapes.length > 0 && (
+            <div className="w-full max-w-[200px]">
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary rounded-full transition-all duration-200"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="text-xs text-center text-muted-foreground mt-1">
+                {currentLetterIndex + 1} / {handShapes.length} letters
+              </p>
+            </div>
+          )}
+
           {/* Status text */}
           {isAnimating ? (
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-primary">
-                Signing in {signLanguage}
+                Fingerspelling in {signLanguage}
               </span>
               <div className="flex gap-1">
                 <span
