@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export type SignLanguage = "ASL" | "BSL" | "ISL";
+export type SignLanguage = "ASL" | "ISL";
 
 interface SignLanguageSelectorProps {
   value: SignLanguage;
@@ -9,7 +9,6 @@ interface SignLanguageSelectorProps {
 
 const languages: { id: SignLanguage; label: string; full: string }[] = [
   { id: "ASL", label: "ASL", full: "American Sign Language" },
-  { id: "BSL", label: "BSL", full: "British Sign Language" },
   { id: "ISL", label: "ISL", full: "International Sign Language" },
 ];
 
