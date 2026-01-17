@@ -58,9 +58,10 @@ function Finger({
           style={{
             width,
             height: proximalH,
-            background: "linear-gradient(135deg, #e8beac 0%, #d4a088 40%, #c8917a 100%)",
+            background: "linear-gradient(135deg, #f5d5c8 0%, #e8c4b0 40%, #ddb49c 100%)",
             borderRadius: `${width * 0.35}px ${width * 0.35}px ${width * 0.25}px ${width * 0.25}px`,
-            boxShadow: "inset -2px 0 3px rgba(0,0,0,0.08), inset 2px 0 3px rgba(255,255,255,0.15)",
+            boxShadow: "inset -2px 0 4px rgba(0,0,0,0.12), inset 2px 0 4px rgba(255,255,255,0.25), 0 1px 3px rgba(0,0,0,0.15)",
+            border: "1px solid rgba(180,140,120,0.2)",
           }}
         >
           {/* Knuckle crease */}
@@ -95,9 +96,10 @@ function Finger({
               width: width * 0.95,
               height: middleH,
               marginLeft: width * 0.025,
-              background: "linear-gradient(135deg, #ecc4b2 0%, #daa892 40%, #cc9680 100%)",
+              background: "linear-gradient(135deg, #f8ddd0 0%, #ecc8b5 40%, #e0b8a0 100%)",
               borderRadius: `${width * 0.3}px`,
-              boxShadow: "inset -1px 0 2px rgba(0,0,0,0.06), inset 1px 0 2px rgba(255,255,255,0.12)",
+              boxShadow: "inset -1px 0 3px rgba(0,0,0,0.1), inset 1px 0 3px rgba(255,255,255,0.2), 0 1px 2px rgba(0,0,0,0.12)",
+              border: "1px solid rgba(180,140,120,0.15)",
             }}
           >
             {/* Joint crease */}
@@ -124,9 +126,10 @@ function Finger({
                 width: width * 0.88,
                 height: distalH,
                 marginLeft: width * 0.06,
-                background: "linear-gradient(135deg, #f0caba 0%, #e0b09a 50%, #d4a088 100%)",
+                background: "linear-gradient(135deg, #fce8dc 0%, #f0d0c0 50%, #e4c0aa 100%)",
                 borderRadius: `${width * 0.5}px ${width * 0.5}px ${width * 0.35}px ${width * 0.35}px`,
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.3)",
+                border: "1px solid rgba(180,140,120,0.12)",
               }}
             >
               {/* Fingertip pad highlight */}
@@ -218,9 +221,10 @@ function Thumb({
           style={{
             width: thumbW,
             height: proximalH,
-            background: "linear-gradient(135deg, #e8beac 0%, #d8a890 40%, #cc9680 100%)",
+            background: "linear-gradient(135deg, #f5d5c8 0%, #e8c4b0 40%, #ddb49c 100%)",
             borderRadius: `${thumbW * 0.4}px`,
-            boxShadow: "inset -2px 0 4px rgba(0,0,0,0.08), inset 2px 0 3px rgba(255,255,255,0.12)",
+            boxShadow: "inset -2px 0 5px rgba(0,0,0,0.12), inset 2px 0 4px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.15)",
+            border: "1px solid rgba(180,140,120,0.2)",
           }}
         >
           {/* Thumb crease */}
@@ -247,9 +251,10 @@ function Thumb({
               width: thumbW * 0.92,
               height: distalH,
               marginLeft: thumbW * 0.04,
-              background: "linear-gradient(135deg, #f0caba 0%, #e4b8a0 50%, #d8a890 100%)",
+              background: "linear-gradient(135deg, #fce8dc 0%, #f0d0c0 50%, #e4c0aa 100%)",
               borderRadius: `${thumbW * 0.5}px ${thumbW * 0.5}px ${thumbW * 0.35}px ${thumbW * 0.35}px`,
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.3)",
+              border: "1px solid rgba(180,140,120,0.12)",
             }}
           >
             {/* Thumb pad highlight */}
@@ -306,9 +311,9 @@ export function ASLHandDisplay({
   className,
 }: ASLHandDisplayProps) {
   const sizeConfig = {
-    sm: { container: "w-32 h-56", fingerW: 11, fingerH: 40, thumbH: 30, palmW: 48, palmH: 52, wristW: 40, wristH: 22, armW: 36, armH: 44 },
-    md: { container: "w-42 h-76", fingerW: 14, fingerH: 54, thumbH: 40, palmW: 62, palmH: 68, wristW: 52, wristH: 28, armW: 46, armH: 58 },
-    lg: { container: "w-56 h-96", fingerW: 18, fingerH: 70, thumbH: 52, palmW: 80, palmH: 88, wristW: 66, wristH: 36, armW: 58, armH: 72 },
+    sm: { container: "w-36 h-64", fingerW: 13, fingerH: 48, thumbH: 34, palmW: 52, palmH: 56, wristW: 42, wristH: 20, armW: 36, armH: 36 },
+    md: { container: "w-48 h-80", fingerW: 16, fingerH: 62, thumbH: 44, palmW: 66, palmH: 72, wristW: 54, wristH: 24, armW: 44, armH: 44 },
+    lg: { container: "w-60 h-[26rem]", fingerW: 20, fingerH: 78, thumbH: 56, palmW: 84, palmH: 92, wristW: 68, wristH: 30, armW: 54, armH: 52 },
   };
 
   const dims = sizeConfig[size];
@@ -639,19 +644,20 @@ export function ASLHandDisplay({
         />
       </div>
 
-      {/* Letter indicator badge */}
+      {/* Letter indicator badge - positioned below with proper spacing */}
       {letter && letter !== " " && (
         <div 
-          className="absolute px-3 py-1.5 rounded-xl shadow-lg"
+          className="absolute px-4 py-2 rounded-xl shadow-xl z-50"
           style={{
-            bottom: -8,
+            bottom: -28,
             left: "50%",
             transform: "translateX(-50%)",
-            background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.85) 100%)",
-            border: "1px solid hsl(var(--primary-foreground) / 0.2)",
+            background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.9) 100%)",
+            border: "2px solid hsl(var(--primary-foreground) / 0.3)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
           }}
         >
-          <span className="text-sm font-bold text-primary-foreground tracking-wide">{letter}</span>
+          <span className="text-base font-bold text-primary-foreground tracking-wide">{letter}</span>
         </div>
       )}
     </div>
