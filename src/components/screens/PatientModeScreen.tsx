@@ -293,18 +293,20 @@ export function PatientModeScreen({
           </div>
         )}
 
-        {/* Sample Signs Guide - shown when camera is off or no detection */}
-        {!cameraActive && !confirmedSign && (
+        {/* Sample Signs Guide - always visible when no confirmed sign */}
+        {!confirmedSign && (
           <div className="space-y-4">
             <SampleSignsGuide />
-            <Button
-              variant="outline"
-              className="w-full h-14 text-base"
-              onClick={onGoToSymptoms}
-            >
-              Or point to symptoms instead
-              <ChevronRight className="w-5 h-5 ml-2" />
-            </Button>
+            {!cameraActive && (
+              <Button
+                variant="outline"
+                className="w-full h-14 text-base"
+                onClick={onGoToSymptoms}
+              >
+                Or point to symptoms instead
+                <ChevronRight className="w-5 h-5 ml-2" />
+              </Button>
+            )}
           </div>
         )}
 
