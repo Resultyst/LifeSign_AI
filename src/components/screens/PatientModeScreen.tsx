@@ -6,9 +6,20 @@ import { ConfidenceIndicator } from "@/components/ui/ConfidenceIndicator";
 import { PrivacyBanner } from "@/components/ui/PrivacyBanner";
 import { SampleSignsGuide } from "@/components/ui/SampleSignsGuide";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, RefreshCw, Check, Hand, Loader2, Sparkles } from "lucide-react";
+import {
+  ChevronRight,
+  RefreshCw,
+  Check,
+  Hand,
+  Loader2,
+  Sparkles,
+  AlertTriangle,
+  HeartCrack,
+  Stethoscope,
+} from "lucide-react";
 import { useSignLanguageDetection } from "@/hooks/useSignLanguageDetection";
 import { DetectedSign } from "@/lib/signLanguageDetection";
+import { cn } from "@/lib/utils";
 
 interface PatientModeScreenProps {
   onBack: () => void;
@@ -130,18 +141,49 @@ export function PatientModeScreen({
 
         {/* Real-time Detection Display */}
         {cameraActive && isDetecting && currentSign && !confirmedSign && (
-          <div className="animate-fade-in p-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl">
+          <div
+            className={cn(
+              "animate-fade-in p-4 border-2 rounded-2xl",
+              currentSign.category === "emergency"
+                ? "bg-critical/10 border-critical/50"
+                : currentSign.category === "medical"
+                ? "bg-amber-500/10 border-amber-500/30"
+                : "bg-primary/10 border-primary/30"
+            )}
+          >
             <div className="flex items-center gap-3">
-              <Sparkles className="w-6 h-6 text-amber-500" />
+              {currentSign.category === "emergency" ? (
+                <AlertTriangle className="w-6 h-6 text-critical animate-pulse" />
+              ) : currentSign.category === "medical" ? (
+                <HeartCrack className="w-6 h-6 text-amber-500" />
+              ) : (
+                <Sparkles className="w-6 h-6 text-primary" />
+              )}
               <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">
-                  Detecting: {currentSign.name}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-foreground">
+                    {currentSign.name}
+                  </p>
+                  {currentSign.category === "emergency" && (
+                    <span className="px-1.5 py-0.5 text-[10px] font-bold bg-critical text-white rounded animate-pulse">
+                      URGENT
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Hold steady for confirmation...
                 </p>
               </div>
-              <span className="text-lg font-bold text-amber-600">
+              <span
+                className={cn(
+                  "text-lg font-bold",
+                  currentSign.category === "emergency"
+                    ? "text-critical"
+                    : currentSign.category === "medical"
+                    ? "text-amber-600"
+                    : "text-primary"
+                )}
+              >
                 {currentSign.confidence}%
               </span>
             </div>
@@ -151,16 +193,41 @@ export function PatientModeScreen({
         {/* Confirmed Recognition Result */}
         {confirmedSign && (
           <div className="space-y-4 animate-fade-in mt-4">
-            <div className="p-5 bg-card border-2 border-success rounded-2xl shadow-sm">
+            <div
+              className={cn(
+                "p-5 bg-card border-2 rounded-2xl shadow-sm",
+                confirmedSign.category === "emergency"
+                  ? "border-critical bg-critical/5"
+                  : confirmedSign.category === "medical"
+                  ? "border-amber-500 bg-amber-500/5"
+                  : "border-success"
+              )}
+            >
               <div className="flex items-center gap-2 mb-2">
-                <Check className="w-5 h-5 text-success" />
+                {confirmedSign.category === "emergency" ? (
+                  <AlertTriangle className="w-5 h-5 text-critical" />
+                ) : confirmedSign.category === "medical" ? (
+                  <Stethoscope className="w-5 h-5 text-amber-600" />
+                ) : (
+                  <Check className="w-5 h-5 text-success" />
+                )}
                 <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">
                   Recognized Sign ({signLanguage})
                 </p>
+                {confirmedSign.category === "emergency" && (
+                  <span className="ml-auto px-2 py-0.5 text-xs font-bold bg-critical text-white rounded">
+                    EMERGENCY
+                  </span>
+                )}
+                {confirmedSign.category === "medical" && (
+                  <span className="ml-auto px-2 py-0.5 text-xs font-bold bg-amber-500 text-white rounded">
+                    MEDICAL
+                  </span>
+                )}
               </div>
               <p className="text-xl font-bold leading-relaxed">{confirmedSign.name}</p>
               <p className="text-base text-muted-foreground mt-1">
-                Meaning: "{confirmedSign.meaning}"
+                → "{confirmedSign.meaning}"
               </p>
             </div>
 

@@ -1,12 +1,13 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   signLanguageDetector,
   DetectedSign,
   SAMPLE_SIGNS,
+  MedicalGesture,
 } from "@/lib/signLanguageDetection";
 
 interface UseSignLanguageDetectionOptions {
-  videoRef: React.RefObject<HTMLVideoElement>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
   isActive: boolean;
   onSignDetected?: (sign: DetectedSign) => void;
 }
@@ -145,6 +146,6 @@ export function useSignLanguageDetection({
     isDetecting,
     error,
     currentSign,
-    sampleSigns: SAMPLE_SIGNS,
+    sampleSigns: SAMPLE_SIGNS as MedicalGesture[],
   };
 }

@@ -2,42 +2,175 @@ import {
   GestureRecognizer,
   FilesetResolver,
   GestureRecognizerResult,
+  HandLandmarker,
+  HandLandmarkerResult,
 } from "@mediapipe/tasks-vision";
 
 export interface DetectedSign {
   name: string;
   meaning: string;
   confidence: number;
+  category?: "general" | "medical" | "emergency";
+  icon?: string;
 }
 
-export const SAMPLE_SIGNS = [
+export interface MedicalGesture {
+  id: string;
+  name: string;
+  meaning: string;
+  description: string;
+  category: "general" | "medical" | "emergency";
+  icon: string;
+}
+
+// Sample signs users can try - including medical-specific ones
+export const SAMPLE_SIGNS: MedicalGesture[] = [
   {
-    id: "thumbs_up",
-    name: "Thumbs Up",
-    meaning: "I'm okay / Yes / Good",
-    gesture: "Closed_Fist", // Will also check thumb position
-    description: "Make a fist and extend your thumb upward",
+    id: "help",
+    name: "Help / Emergency",
+    meaning: "I need help immediately",
+    description: "Wave both hands or show open palm repeatedly",
+    category: "emergency",
+    icon: "alert-triangle",
   },
   {
-    id: "open_palm",
-    name: "Open Palm",
-    meaning: "Hello / Stop / Wait",
-    gesture: "Open_Palm",
-    description: "Show your open hand with fingers spread",
+    id: "pain",
+    name: "Pain",
+    meaning: "I am in pain",
+    description: "Make a fist and press it against your body",
+    category: "medical",
+    icon: "heart-crack",
   },
   {
-    id: "pointing_up",
-    name: "Pointing Up",
-    meaning: "I need attention / Important",
-    gesture: "Pointing_Up",
-    description: "Point your index finger upward",
+    id: "cant_breathe",
+    name: "Can't Breathe",
+    meaning: "I'm having trouble breathing",
+    description: "Point to your throat/chest with open hand",
+    category: "emergency",
+    icon: "wind",
+  },
+  {
+    id: "medicine",
+    name: "Medicine / Pills",
+    meaning: "I need medicine / medication question",
+    description: "Make pill-taking gesture (thumb to mouth)",
+    category: "medical",
+    icon: "pill",
+  },
+  {
+    id: "yes",
+    name: "Yes / Okay",
+    meaning: "Yes / I understand / I'm okay",
+    description: "Thumbs up gesture",
+    category: "general",
+    icon: "thumbs-up",
+  },
+  {
+    id: "no",
+    name: "No / Problem",
+    meaning: "No / Not good / I have a problem",
+    description: "Thumbs down or shake head",
+    category: "general",
+    icon: "thumbs-down",
+  },
+  {
+    id: "dizzy",
+    name: "Dizzy / Faint",
+    meaning: "I feel dizzy or faint",
+    description: "Circular motion near head with finger",
+    category: "medical",
+    icon: "loader",
+  },
+  {
+    id: "allergic",
+    name: "Allergic Reaction",
+    meaning: "I'm having an allergic reaction",
+    description: "Scratch motion on arm or point to swelling",
+    category: "emergency",
+    icon: "shield-alert",
   },
 ];
 
+// Medical context mappings for MediaPipe gestures
+interface MedicalGestureMapping {
+  name: string;
+  meaning: string;
+  category: "general" | "medical" | "emergency";
+  icon: string;
+  alternativeMeanings?: string[];
+}
+
+const MEDICAL_GESTURE_MAPPINGS: Record<string, MedicalGestureMapping> = {
+  Thumb_Up: {
+    name: "Yes / I'm Okay",
+    meaning: "Yes, I understand / I'm okay / Feeling better",
+    category: "general",
+    icon: "thumbs-up",
+    alternativeMeanings: ["Confirm", "Agree", "Good"],
+  },
+  Thumb_Down: {
+    name: "No / Problem",
+    meaning: "No / Not good / I have a problem / Pain worsening",
+    category: "medical",
+    icon: "thumbs-down",
+    alternativeMeanings: ["Disagree", "Bad", "Worse"],
+  },
+  Open_Palm: {
+    name: "Stop / Help Needed",
+    meaning: "Stop / I need help / Wait / Attention needed",
+    category: "emergency",
+    icon: "hand",
+    alternativeMeanings: ["Hello", "Five", "Pause"],
+  },
+  Closed_Fist: {
+    name: "Pain / Hold",
+    meaning: "I'm in pain / Hold on / Cramping / Tightness",
+    category: "medical",
+    icon: "heart-crack",
+    alternativeMeanings: ["Wait", "Stop", "Tight feeling"],
+  },
+  Pointing_Up: {
+    name: "Urgent / Important",
+    meaning: "This is urgent / Pay attention / Important symptom",
+    category: "emergency",
+    icon: "alert-triangle",
+    alternativeMeanings: ["One", "Look here", "This area"],
+  },
+  Victory: {
+    name: "Two / Second Issue",
+    meaning: "Two symptoms / Second problem / Moderate pain (2/10)",
+    category: "medical",
+    icon: "hash",
+    alternativeMeanings: ["Peace", "Okay", "Two"],
+  },
+  ILoveYou: {
+    name: "Thank You / Understood",
+    meaning: "Thank you / I appreciate it / Message received",
+    category: "general",
+    icon: "heart",
+    alternativeMeanings: ["Love", "Thanks", "Appreciate"],
+  },
+};
+
+// Hand landmark indices for custom gesture detection
+const HAND_LANDMARKS = {
+  WRIST: 0,
+  THUMB_TIP: 4,
+  INDEX_TIP: 8,
+  MIDDLE_TIP: 12,
+  RING_TIP: 16,
+  PINKY_TIP: 20,
+  INDEX_MCP: 5,
+  MIDDLE_MCP: 9,
+};
+
 class SignLanguageDetector {
   private gestureRecognizer: GestureRecognizer | null = null;
+  private handLandmarker: HandLandmarker | null = null;
   private isInitializing = false;
   private initPromise: Promise<void> | null = null;
+  private lastGestures: string[] = [];
+  private gestureHistory: { gesture: string; timestamp: number }[] = [];
 
   async initialize(): Promise<void> {
     if (this.gestureRecognizer) return;
@@ -54,10 +187,22 @@ class SignLanguageDetector {
         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
       );
 
+      // Initialize gesture recognizer
       this.gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
         baseOptions: {
           modelAssetPath:
             "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",
+          delegate: "GPU",
+        },
+        runningMode: "VIDEO",
+        numHands: 2,
+      });
+
+      // Initialize hand landmarker for custom gesture detection
+      this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath:
+            "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
           delegate: "GPU",
         },
         runningMode: "VIDEO",
@@ -82,16 +227,42 @@ class SignLanguageDetector {
     }
 
     try {
-      const results: GestureRecognizerResult =
+      // Get gesture recognition results
+      const gestureResults: GestureRecognizerResult =
         this.gestureRecognizer.recognizeForVideo(video, timestamp);
 
-      if (results.gestures && results.gestures.length > 0) {
-        const gesture = results.gestures[0][0];
+      // Get hand landmarks for custom gestures
+      let handResults: HandLandmarkerResult | null = null;
+      if (this.handLandmarker) {
+        handResults = this.handLandmarker.detectForVideo(video, timestamp);
+      }
+
+      // First check for custom medical gestures based on hand landmarks
+      const customGesture = this.detectCustomMedicalGestures(handResults);
+      if (customGesture) {
+        this.updateGestureHistory(customGesture.name);
+        return customGesture;
+      }
+
+      // Then check MediaPipe recognized gestures
+      if (gestureResults.gestures && gestureResults.gestures.length > 0) {
+        const gesture = gestureResults.gestures[0][0];
         const gestureName = gesture.categoryName;
         const confidence = gesture.score;
 
-        // Map MediaPipe gestures to our sample signs
-        const matchedSign = this.mapGestureToSign(gestureName, confidence);
+        // Check for two-handed gestures (emergency signals)
+        if (gestureResults.gestures.length === 2) {
+          const twoHandGesture = this.detectTwoHandGestures(gestureResults);
+          if (twoHandGesture) {
+            return twoHandGesture;
+          }
+        }
+
+        // Map to medical context
+        const matchedSign = this.mapGestureToMedicalSign(gestureName, confidence);
+        if (matchedSign) {
+          this.updateGestureHistory(gestureName);
+        }
         return matchedSign;
       }
     } catch (error) {
@@ -101,53 +272,172 @@ class SignLanguageDetector {
     return null;
   }
 
-  private mapGestureToSign(
-    gestureName: string,
-    confidence: number
-  ): DetectedSign | null {
-    // MediaPipe gestures: None, Closed_Fist, Open_Palm, Pointing_Up, Thumb_Down, Thumb_Up, Victory, ILoveYou
-    
-    const gestureMapping: Record<string, { name: string; meaning: string }> = {
-      Thumb_Up: {
-        name: "Thumbs Up",
-        meaning: "I'm okay / Yes / Good",
-      },
-      Open_Palm: {
-        name: "Open Palm / Hello",
-        meaning: "Hello / Stop / Wait / I need help",
-      },
-      Pointing_Up: {
-        name: "Pointing Up",
-        meaning: "I need attention / Important / Look here",
-      },
-      Victory: {
-        name: "Peace / Victory",
-        meaning: "I'm okay / Two / Peace",
-      },
-      ILoveYou: {
-        name: "I Love You",
-        meaning: "I love you / Thank you",
-      },
-      Closed_Fist: {
-        name: "Closed Fist",
-        meaning: "Stop / No / Hold on",
-      },
-      Thumb_Down: {
-        name: "Thumbs Down",
-        meaning: "No / Not good / Problem",
-      },
-    };
+  private updateGestureHistory(gesture: string) {
+    const now = Date.now();
+    this.gestureHistory.push({ gesture, timestamp: now });
+    // Keep only last 5 seconds of history
+    this.gestureHistory = this.gestureHistory.filter(
+      (g) => now - g.timestamp < 5000
+    );
+  }
 
-    const mapped = gestureMapping[gestureName];
-    if (mapped && confidence > 0.5) {
+  private detectTwoHandGestures(
+    results: GestureRecognizerResult
+  ): DetectedSign | null {
+    if (results.gestures.length < 2) return null;
+
+    const gesture1 = results.gestures[0][0].categoryName;
+    const gesture2 = results.gestures[1][0].categoryName;
+    const avgConfidence =
+      (results.gestures[0][0].score + results.gestures[1][0].score) / 2;
+
+    // Both hands open palm = EMERGENCY HELP
+    if (gesture1 === "Open_Palm" && gesture2 === "Open_Palm") {
       return {
-        name: mapped.name,
-        meaning: mapped.meaning,
-        confidence: Math.round(confidence * 100),
+        name: "🚨 EMERGENCY - HELP!",
+        meaning: "I need immediate emergency assistance!",
+        confidence: Math.round(avgConfidence * 100),
+        category: "emergency",
+        icon: "alert-triangle",
+      };
+    }
+
+    // Both hands closed fist = Severe pain/cramping
+    if (gesture1 === "Closed_Fist" && gesture2 === "Closed_Fist") {
+      return {
+        name: "Severe Pain",
+        meaning: "I'm experiencing severe pain or cramping",
+        confidence: Math.round(avgConfidence * 100),
+        category: "emergency",
+        icon: "heart-crack",
+      };
+    }
+
+    // One pointing + one open = "Look here, help"
+    if (
+      (gesture1 === "Pointing_Up" && gesture2 === "Open_Palm") ||
+      (gesture1 === "Open_Palm" && gesture2 === "Pointing_Up")
+    ) {
+      return {
+        name: "Help Here",
+        meaning: "I need help with this specific area/issue",
+        confidence: Math.round(avgConfidence * 100),
+        category: "medical",
+        icon: "map-pin",
       };
     }
 
     return null;
+  }
+
+  private detectCustomMedicalGestures(
+    results: HandLandmarkerResult | null
+  ): DetectedSign | null {
+    if (!results || !results.landmarks || results.landmarks.length === 0) {
+      return null;
+    }
+
+    const landmarks = results.landmarks[0];
+
+    // Detect "pointing to chest" gesture (hand near center, pointing down/in)
+    const indexTip = landmarks[HAND_LANDMARKS.INDEX_TIP];
+    const wrist = landmarks[HAND_LANDMARKS.WRIST];
+    const thumbTip = landmarks[HAND_LANDMARKS.THUMB_TIP];
+
+    // Check if hand is in upper-middle area (chest region)
+    if (indexTip.y > 0.3 && indexTip.y < 0.7 && indexTip.x > 0.3 && indexTip.x < 0.7) {
+      // Check if fingers are mostly closed (fist near chest = chest pain)
+      const fingersClosed = this.areFingersClosed(landmarks);
+      if (fingersClosed) {
+        return {
+          name: "Chest Discomfort",
+          meaning: "I'm experiencing chest pain or pressure",
+          confidence: 75,
+          category: "emergency",
+          icon: "heart-pulse",
+        };
+      }
+    }
+
+    // Detect throat touch (hand near top, open palm facing in)
+    if (indexTip.y < 0.35 && wrist.y < 0.5) {
+      return {
+        name: "Throat / Breathing Issue",
+        meaning: "I'm having trouble with my throat or breathing",
+        confidence: 70,
+        category: "emergency",
+        icon: "wind",
+      };
+    }
+
+    // Detect stomach touch (hand in lower middle)
+    if (indexTip.y > 0.6 && indexTip.x > 0.3 && indexTip.x < 0.7) {
+      const fingersClosed = this.areFingersClosed(landmarks);
+      if (fingersClosed) {
+        return {
+          name: "Stomach Pain",
+          meaning: "I'm experiencing abdominal/stomach pain",
+          confidence: 72,
+          category: "medical",
+          icon: "circle-dot",
+        };
+      }
+    }
+
+    // Detect head touch (hand at very top)
+    if (wrist.y < 0.25 && indexTip.y < 0.3) {
+      return {
+        name: "Head Pain / Dizziness",
+        meaning: "I have a headache or feel dizzy",
+        confidence: 70,
+        category: "medical",
+        icon: "brain",
+      };
+    }
+
+    return null;
+  }
+
+  private areFingersClosed(landmarks: any[]): boolean {
+    // Check if fingertips are close to palm (closed fist)
+    const palmCenter = landmarks[HAND_LANDMARKS.MIDDLE_MCP];
+    const indexTip = landmarks[HAND_LANDMARKS.INDEX_TIP];
+    const middleTip = landmarks[HAND_LANDMARKS.MIDDLE_TIP];
+
+    const distIndex = Math.hypot(
+      indexTip.x - palmCenter.x,
+      indexTip.y - palmCenter.y
+    );
+    const distMiddle = Math.hypot(
+      middleTip.x - palmCenter.x,
+      middleTip.y - palmCenter.y
+    );
+
+    return distIndex < 0.15 && distMiddle < 0.15;
+  }
+
+  private mapGestureToMedicalSign(
+    gestureName: string,
+    confidence: number
+  ): DetectedSign | null {
+    const mapping = MEDICAL_GESTURE_MAPPINGS[gestureName];
+
+    if (mapping && confidence > 0.5) {
+      return {
+        name: mapping.name,
+        meaning: mapping.meaning,
+        confidence: Math.round(confidence * 100),
+        category: mapping.category,
+        icon: mapping.icon,
+      };
+    }
+
+    return null;
+  }
+
+  // Get gesture sequence for complex meanings
+  getRecentGestureSequence(): string[] {
+    return this.gestureHistory.map((g) => g.gesture);
   }
 
   isReady(): boolean {
@@ -158,6 +448,10 @@ class SignLanguageDetector {
     if (this.gestureRecognizer) {
       this.gestureRecognizer.close();
       this.gestureRecognizer = null;
+    }
+    if (this.handLandmarker) {
+      this.handLandmarker.close();
+      this.handLandmarker = null;
     }
   }
 }
