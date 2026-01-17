@@ -16,15 +16,15 @@ export function ASLHandDisplay({
   className,
 }: ASLHandDisplayProps) {
   const sizeClasses = {
-    sm: "w-20 h-28",
-    md: "w-28 h-40",
-    lg: "w-36 h-52",
+    sm: "w-24 h-36",
+    md: "w-32 h-48",
+    lg: "w-44 h-64",
   };
 
   const fingerSizes = {
-    sm: { width: 8, indexH: 28, middleH: 32, ringH: 28, pinkyH: 24, thumbH: 20 },
-    md: { width: 12, indexH: 40, middleH: 48, ringH: 40, pinkyH: 32, thumbH: 28 },
-    lg: { width: 16, indexH: 52, middleH: 60, ringH: 52, pinkyH: 44, thumbH: 36 },
+    sm: { width: 10, indexH: 32, middleH: 38, ringH: 32, pinkyH: 26, thumbH: 24, palmW: 40, palmH: 45 },
+    md: { width: 14, indexH: 48, middleH: 56, ringH: 48, pinkyH: 38, thumbH: 32, palmW: 56, palmH: 60 },
+    lg: { width: 18, indexH: 64, middleH: 72, ringH: 64, pinkyH: 52, thumbH: 44, palmW: 72, palmH: 80 },
   };
 
   const dims = fingerSizes[size];
@@ -80,7 +80,7 @@ export function ASLHandDisplay({
   return (
     <div
       className={cn(
-        "relative flex items-end justify-center",
+        "relative flex items-end justify-center overflow-visible",
         sizeClasses[size],
         "transition-transform duration-300",
         isAnimating && "animate-pulse-soft",
@@ -91,12 +91,15 @@ export function ASLHandDisplay({
       {/* Palm */}
       <div
         className={cn(
-          "absolute bottom-0 rounded-2xl bg-gradient-to-b from-amber-200 to-amber-300 dark:from-amber-600 dark:to-amber-700",
+          "absolute rounded-2xl bg-gradient-to-b from-amber-200 to-amber-300 dark:from-amber-600 dark:to-amber-700",
           "shadow-md border border-amber-400/30"
         )}
         style={{
-          width: dims.width * 4.5,
-          height: dims.width * 5,
+          width: dims.palmW,
+          height: dims.palmH,
+          bottom: 8,
+          left: '50%',
+          transform: 'translateX(-50%)',
           borderRadius: "30% 30% 40% 40%",
         }}
       />
@@ -105,21 +108,25 @@ export function ASLHandDisplay({
       <div
         className="absolute rounded-full bg-gradient-to-b from-amber-100 to-amber-200 dark:from-amber-500 dark:to-amber-600 shadow-sm transition-all duration-300"
         style={{
-          width: dims.width * 1.1,
+          width: dims.width * 1.2,
           height: thumbStyle.height,
-          bottom: dims.width * 3,
-          left: 0,
+          bottom: dims.palmH * 0.6,
+          left: `calc(50% - ${dims.palmW / 2 + dims.width}px)`,
           opacity: thumbStyle.opacity,
-          transform: `rotate(${thumbStyle.bend}deg)`,
-          transformOrigin: "bottom center",
+          transform: `rotate(${thumbStyle.bend - 20}deg)`,
+          transformOrigin: "bottom right",
           borderRadius: "40% 40% 30% 30%",
         }}
       />
 
       {/* Fingers container */}
       <div
-        className="absolute flex gap-0.5 items-end"
-        style={{ bottom: dims.width * 4.5 }}
+        className="absolute flex gap-1 items-end justify-center"
+        style={{ 
+          bottom: dims.palmH + 4,
+          left: '50%',
+          transform: 'translateX(-50%)',
+        }}
       >
         {/* Index */}
         <div
@@ -128,7 +135,7 @@ export function ASLHandDisplay({
             width: dims.width,
             height: indexStyle.height,
             opacity: indexStyle.opacity,
-            transform: `rotate(${indexStyle.bend}deg) translateX(-2px)`,
+            transform: `rotate(${indexStyle.bend - 3}deg)`,
             transformOrigin: "bottom center",
           }}
         />
@@ -150,7 +157,7 @@ export function ASLHandDisplay({
             width: dims.width,
             height: ringStyle.height,
             opacity: ringStyle.opacity,
-            transform: `rotate(${-ringStyle.bend}deg)`,
+            transform: `rotate(${-ringStyle.bend + 3}deg)`,
             transformOrigin: "bottom center",
           }}
         />
@@ -158,10 +165,10 @@ export function ASLHandDisplay({
         <div
           className="rounded-t-full bg-gradient-to-b from-amber-100 to-amber-200 dark:from-amber-500 dark:to-amber-600 shadow-sm transition-all duration-300"
           style={{
-            width: dims.width * 0.9,
+            width: dims.width * 0.85,
             height: pinkyStyle.height,
             opacity: pinkyStyle.opacity,
-            transform: `rotate(${-pinkyStyle.bend - 5}deg) translateX(2px)`,
+            transform: `rotate(${-pinkyStyle.bend - 6}deg)`,
             transformOrigin: "bottom center",
           }}
         />
@@ -169,8 +176,8 @@ export function ASLHandDisplay({
 
       {/* Letter indicator */}
       {letter && letter !== " " && (
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-primary rounded-md shadow-sm">
-          <span className="text-xs font-bold text-primary-foreground">{letter}</span>
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-primary rounded-lg shadow-md">
+          <span className="text-sm font-bold text-primary-foreground">{letter}</span>
         </div>
       )}
     </div>
