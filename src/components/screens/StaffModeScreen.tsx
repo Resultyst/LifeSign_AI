@@ -100,7 +100,12 @@ export function StaffModeScreen({
                 Clear
               </Button>
             </div>
-            <SignAvatar message={currentMessage} isAnimating={isAnimating} />
+            <SignAvatar 
+              message={currentMessage} 
+              isAnimating={isAnimating} 
+              signLanguage={signLanguage}
+              autoSpeak={true}
+            />
           </div>
         ) : (
           <div className="p-6 bg-muted/50 rounded-2xl text-center">
