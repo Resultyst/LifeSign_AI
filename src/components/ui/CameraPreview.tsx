@@ -1,6 +1,8 @@
 import { useRef, useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import { Camera, Video, Hand, VideoOff, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DetectedSign } from "@/lib/signLanguageDetection";
+import { GestureDetectionFeedback } from "./GestureDetectionFeedback";
 
 interface CameraPreviewProps {
   isActive: boolean;
@@ -8,6 +10,8 @@ interface CameraPreviewProps {
   className?: string;
   showGuide?: boolean;
   statusMessage?: string;
+  currentSign?: DetectedSign | null;
+  isDetecting?: boolean;
 }
 
 export interface CameraPreviewHandle {
@@ -15,7 +19,7 @@ export interface CameraPreviewHandle {
 }
 
 export const CameraPreview = forwardRef<CameraPreviewHandle, CameraPreviewProps>(
-  ({ isActive, onToggle, className, showGuide = true, statusMessage }, ref) => {
+  ({ isActive, onToggle, className, showGuide = true, statusMessage, currentSign, isDetecting }, ref) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -132,8 +136,16 @@ export const CameraPreview = forwardRef<CameraPreviewHandle, CameraPreviewProps>
                 </div>
               )}
 
+              {/* Gesture Detection Feedback Overlay */}
+              {hasPermission && !error && isDetecting && currentSign && (
+                <GestureDetectionFeedback
+                  currentSign={currentSign}
+                  isDetecting={isDetecting}
+                />
+              )}
+
               {/* Hand positioning guide overlay */}
-              {hasPermission && !error && showGuide && (
+              {hasPermission && !error && showGuide && !currentSign && (
                 <div className="absolute inset-0 pointer-events-none">
                   {/* Corner brackets for main frame */}
                   <div className="absolute inset-6">
@@ -170,20 +182,22 @@ export const CameraPreview = forwardRef<CameraPreviewHandle, CameraPreviewProps>
                   {/* Vertical center line */}
                   <div className="absolute top-12 bottom-20 left-1/2 w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent" />
 
-                  {/* Status message */}
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-background/80 rounded-full backdrop-blur-sm shadow-lg">
-                    <Hand className="w-4 h-4 text-primary animate-pulse" />
-                    <span className="text-xs font-medium text-foreground">
-                      {statusMessage || "Position hands within the guides"}
-                    </span>
-                  </div>
-
                   {/* Top hint */}
                   <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-background/60 rounded-full backdrop-blur-sm">
                     <span className="text-[10px] font-medium text-muted-foreground">
                       Keep hands visible • Move slowly
                     </span>
                   </div>
+                </div>
+              )}
+
+              {/* Status message - always visible when camera active */}
+              {hasPermission && !error && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-background/80 rounded-full backdrop-blur-sm shadow-lg pointer-events-none z-10">
+                  <Hand className="w-4 h-4 text-primary animate-pulse" />
+                  <span className="text-xs font-medium text-foreground">
+                    {statusMessage || "Position hands within the guides"}
+                  </span>
                 </div>
               )}
             </>
