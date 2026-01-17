@@ -360,14 +360,17 @@ class SignLanguageDetector {
     const thumbTip = landmarks[HAND_LANDMARKS.THUMB_TIP];
     const middleTip = landmarks[HAND_LANDMARKS.MIDDLE_TIP];
 
-    // ===== MEDICINE / PILLS GESTURE =====
-    // Thumb near mouth area (pill-taking gesture)
-    // Thumb tip should be in upper portion of frame (near face/mouth)
-    const isThumbNearMouth = thumbTip.y < 0.35 && thumbTip.x > 0.35 && thumbTip.x < 0.65;
-    const isThumbHigherThanWrist = thumbTip.y < wrist.y - 0.1;
+    const isHandFlat = this.isHandFlat(landmarks);
     const areFingersCurled = this.areFingersClosed(landmarks);
+
+    // ===== MEDICINE / PILLS GESTURE =====
+    // Hand near mouth with thumb extended (pill-taking motion)
+    // Must be in upper portion AND thumb clearly extended toward mouth
+    const isInMouthRegion = thumbTip.y < 0.3 && thumbTip.x > 0.3 && thumbTip.x < 0.7;
+    const isThumbExtended = Math.abs(thumbTip.x - wrist.x) > 0.05 || thumbTip.y < wrist.y - 0.15;
+    const isHandNearFace = wrist.y < 0.45;
     
-    if (isThumbNearMouth && isThumbHigherThanWrist && areFingersCurled) {
+    if (isInMouthRegion && isThumbExtended && isHandNearFace && areFingersCurled) {
       return {
         name: "Medicine / Pills",
         meaning: "I need medicine",
@@ -378,12 +381,12 @@ class SignLanguageDetector {
     }
 
     // ===== DIZZY / FAINT GESTURE =====
-    // Circular motion near head OR finger pointing at temple
-    // Index finger near head/temple region
-    const isNearHead = indexTip.y < 0.3 && (indexTip.x < 0.35 || indexTip.x > 0.65);
-    const isIndexPointing = !this.isHandFlat(landmarks);
+    // Hand near temple/side of head with circular or wobbling motion
+    // Index finger pointing at temple area (side of head, not center)
+    const isAtTemple = indexTip.y < 0.35 && (indexTip.x < 0.3 || indexTip.x > 0.7);
+    const isWristLower = wrist.y > indexTip.y + 0.1;
     
-    if (isNearHead && isIndexPointing) {
+    if (isAtTemple && isWristLower && !isHandFlat) {
       return {
         name: "Dizzy / Faint",
         meaning: "I feel dizzy or faint",
@@ -393,14 +396,27 @@ class SignLanguageDetector {
       };
     }
 
+    // ===== ALLERGIC REACTION =====
+    // Scratching motion on arm - hand clearly to the side of body
+    // Must be very far to the side (on arm position)
+    const isOnArmSide = indexTip.x < 0.2 || indexTip.x > 0.8;
+    const isArmHeight = indexTip.y > 0.35 && indexTip.y < 0.65;
+    const isWristCentered = wrist.x > 0.3 && wrist.x < 0.7;
+    
+    if (isOnArmSide && isArmHeight && isWristCentered) {
+      return {
+        name: "Allergic Reaction",
+        meaning: "I'm having an allergic reaction",
+        confidence: 68,
+        category: "emergency",
+        icon: "shield-alert",
+      };
+    }
+
     // ===== CHEST DISCOMFORT =====
-    // For chest pain detection, require:
-    // 1. Hand in chest region
-    // 2. Fingers spread/open (palm on chest) OR flat hand
-    // 3. NOT a closed fist pointing outward (which could be thumbs up/down)
-    const isInChestRegion = indexTip.y > 0.35 && indexTip.y < 0.65 && indexTip.x > 0.35 && indexTip.x < 0.65;
-    const isHandFlat = this.isHandFlat(landmarks);
-    const isPalmFacingCamera = wrist.z > indexTip.z; // Palm is closer to camera than wrist
+    // Hand flat on chest - must be clearly in center chest region
+    const isInChestRegion = indexTip.y > 0.4 && indexTip.y < 0.6 && indexTip.x > 0.35 && indexTip.x < 0.65;
+    const isPalmFacingCamera = wrist.z > indexTip.z;
 
     if (isInChestRegion && isHandFlat && isPalmFacingCamera) {
       return {
@@ -413,8 +429,10 @@ class SignLanguageDetector {
     }
 
     // ===== THROAT / BREATHING ISSUE =====
-    // Require hand to be clearly at throat level, not just raised
-    if (indexTip.y < 0.3 && wrist.y < 0.4 && isHandFlat) {
+    // Hand at throat level with flat palm
+    const isAtThroat = indexTip.y > 0.25 && indexTip.y < 0.4 && indexTip.x > 0.35 && indexTip.x < 0.65;
+    
+    if (isAtThroat && isHandFlat && wrist.y < 0.5) {
       return {
         name: "Breathing Issue",
         meaning: "I'm having trouble breathing",
@@ -424,21 +442,11 @@ class SignLanguageDetector {
       };
     }
 
-    // ===== STOMACH PAIN =====
-    // Detect stomach touch (hand in lower middle with flat/open hand)
-    if (indexTip.y > 0.65 && indexTip.x > 0.3 && indexTip.x < 0.7 && isHandFlat) {
-      return {
-        name: "Stomach Pain",
-        meaning: "I have stomach pain",
-        confidence: 72,
-        category: "medical",
-        icon: "circle-dot",
-      };
-    }
-
     // ===== HEADACHE =====
-    // Detect head touch (hand at very top)
-    if (wrist.y < 0.2 && indexTip.y < 0.25 && isHandFlat) {
+    // Hand touching top of head - both wrist and fingers must be very high
+    const isAtTopOfHead = wrist.y < 0.2 && indexTip.y < 0.25 && indexTip.x > 0.3 && indexTip.x < 0.7;
+    
+    if (isAtTopOfHead && isHandFlat) {
       return {
         name: "Headache",
         meaning: "I have a headache",
@@ -448,18 +456,18 @@ class SignLanguageDetector {
       };
     }
 
-    // ===== ALLERGIC REACTION =====
-    // Scratching motion on arm - hand moving across body horizontally
-    const isOnArm = indexTip.x < 0.25 || indexTip.x > 0.75;
-    const isMidHeight = indexTip.y > 0.4 && indexTip.y < 0.7;
+    // ===== STOMACH PAIN =====
+    // Hand clearly in lower abdomen - must be very low AND centered
+    const isInStomachRegion = indexTip.y > 0.7 && indexTip.x > 0.35 && indexTip.x < 0.65;
+    const isWristAlsoLow = wrist.y > 0.6;
     
-    if (isOnArm && isMidHeight && !isHandFlat) {
+    if (isInStomachRegion && isWristAlsoLow && isHandFlat) {
       return {
-        name: "Allergic Reaction",
-        meaning: "I'm having an allergic reaction",
-        confidence: 68,
-        category: "emergency",
-        icon: "shield-alert",
+        name: "Stomach Pain",
+        meaning: "I have stomach pain",
+        confidence: 72,
+        category: "medical",
+        icon: "circle-dot",
       };
     }
 
