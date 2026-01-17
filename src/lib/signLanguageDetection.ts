@@ -590,29 +590,39 @@ class SignLanguageDetector {
     let count = 0;
     const wrist = landmarks[HAND_LANDMARKS.WRIST];
 
-    // Check thumb - compare tip to IP joint horizontally
+    // Check thumb - requires significant extension from the palm
     const thumbTip = landmarks[HAND_LANDMARKS.THUMB_TIP];
     const thumbIp = landmarks[HAND_LANDMARKS.THUMB_IP];
     const thumbMcp = landmarks[HAND_LANDMARKS.THUMB_MCP];
+    const indexMcp = landmarks[HAND_LANDMARKS.INDEX_MCP];
     
-    // Thumb is extended if tip is far from wrist
-    const thumbExtended = Math.hypot(thumbTip.x - thumbMcp.x, thumbTip.y - thumbMcp.y) > 0.06;
+    // Thumb is extended if tip is far from index MCP (away from palm)
+    // and the thumb tip is significantly away from the thumb MCP
+    const thumbToIndexDist = Math.hypot(thumbTip.x - indexMcp.x, thumbTip.y - indexMcp.y);
+    const thumbExtended = thumbToIndexDist > 0.12;
     if (thumbExtended) count++;
 
-    // Check other fingers - tip should be higher (lower y) than PIP joint
+    // Check other fingers - tip should be clearly above PIP joint
     const fingerConfigs = [
-      { tip: HAND_LANDMARKS.INDEX_TIP, pip: HAND_LANDMARKS.INDEX_PIP },
-      { tip: HAND_LANDMARKS.MIDDLE_TIP, pip: HAND_LANDMARKS.MIDDLE_PIP },
-      { tip: HAND_LANDMARKS.RING_TIP, pip: HAND_LANDMARKS.RING_PIP },
-      { tip: HAND_LANDMARKS.PINKY_TIP, pip: HAND_LANDMARKS.PINKY_PIP },
+      { tip: HAND_LANDMARKS.INDEX_TIP, pip: HAND_LANDMARKS.INDEX_PIP, mcp: HAND_LANDMARKS.INDEX_MCP },
+      { tip: HAND_LANDMARKS.MIDDLE_TIP, pip: HAND_LANDMARKS.MIDDLE_PIP, mcp: HAND_LANDMARKS.MIDDLE_MCP },
+      { tip: HAND_LANDMARKS.RING_TIP, pip: HAND_LANDMARKS.RING_PIP, mcp: HAND_LANDMARKS.RING_MCP },
+      { tip: HAND_LANDMARKS.PINKY_TIP, pip: HAND_LANDMARKS.PINKY_PIP, mcp: HAND_LANDMARKS.PINKY_MCP },
     ];
 
-    for (const { tip, pip } of fingerConfigs) {
+    for (const { tip, pip, mcp } of fingerConfigs) {
       const tipLandmark = landmarks[tip];
       const pipLandmark = landmarks[pip];
+      const mcpLandmark = landmarks[mcp];
       
-      // Finger is extended if tip is above (lower y value) the PIP joint
-      if (tipLandmark.y < pipLandmark.y - 0.02) {
+      // Finger is extended if:
+      // 1. Tip is clearly above (lower y) the PIP joint
+      // 2. The finger has some length (tip is away from MCP)
+      const tipAbovePip = tipLandmark.y < pipLandmark.y - 0.04;
+      const fingerLength = Math.hypot(tipLandmark.x - mcpLandmark.x, tipLandmark.y - mcpLandmark.y);
+      const hasLength = fingerLength > 0.08;
+      
+      if (tipAbovePip && hasLength) {
         count++;
       }
     }
