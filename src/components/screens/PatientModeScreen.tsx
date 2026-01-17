@@ -164,6 +164,8 @@ export function PatientModeScreen({
           onToggle={handleCameraToggle}
           className="mt-8 mb-8"
           statusMessage={getStatusMessage()}
+          currentSign={confirmedSign ? null : currentSign}
+          isDetecting={isDetecting && !confirmedSign}
         />
 
         {/* AI Loading Indicator */}
