@@ -69,8 +69,10 @@ export function PatientModeScreen({
     // Only set if confidence is high enough
     if (sign.confidence >= 70) {
       setConfirmedSign(sign);
-      // Announce the sign via voice
-      announceSign(sign.name, sign.meaning, sign.category);
+      // Announce the sign via voice - only for non-number categories
+      if (sign.category !== "number") {
+        announceSign(sign.name, sign.meaning, sign.category as "emergency" | "medical" | "general");
+      }
     }
   }, [announceSign]);
 
