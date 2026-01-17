@@ -237,33 +237,38 @@ class SignLanguageDetector {
         handResults = this.handLandmarker.detectForVideo(video, timestamp);
       }
 
-      // First check for custom medical gestures based on hand landmarks
-      const customGesture = this.detectCustomMedicalGestures(handResults);
-      if (customGesture) {
-        this.updateGestureHistory(customGesture.name);
-        return customGesture;
-      }
-
-      // Then check MediaPipe recognized gestures
+      // PRIORITY 1: Check MediaPipe recognized gestures FIRST
+      // These are more accurate for standard gestures like thumbs up/down
       if (gestureResults.gestures && gestureResults.gestures.length > 0) {
         const gesture = gestureResults.gestures[0][0];
         const gestureName = gesture.categoryName;
         const confidence = gesture.score;
 
-        // Check for two-handed gestures (emergency signals)
-        if (gestureResults.gestures.length === 2) {
-          const twoHandGesture = this.detectTwoHandGestures(gestureResults);
-          if (twoHandGesture) {
-            return twoHandGesture;
+        // Skip "None" gestures
+        if (gestureName !== "None" && confidence > 0.6) {
+          // Check for two-handed gestures (emergency signals)
+          if (gestureResults.gestures.length === 2) {
+            const twoHandGesture = this.detectTwoHandGestures(gestureResults);
+            if (twoHandGesture) {
+              return twoHandGesture;
+            }
+          }
+
+          // Map to medical context
+          const matchedSign = this.mapGestureToMedicalSign(gestureName, confidence);
+          if (matchedSign) {
+            this.updateGestureHistory(gestureName);
+            return matchedSign;
           }
         }
+      }
 
-        // Map to medical context
-        const matchedSign = this.mapGestureToMedicalSign(gestureName, confidence);
-        if (matchedSign) {
-          this.updateGestureHistory(gestureName);
-        }
-        return matchedSign;
+      // PRIORITY 2: Only check custom medical gestures if no standard gesture detected
+      // This prevents thumbs up/down from being misclassified as chest pain
+      const customGesture = this.detectCustomMedicalGestures(handResults, gestureResults);
+      if (customGesture) {
+        this.updateGestureHistory(customGesture.name);
+        return customGesture;
       }
     } catch (error) {
       console.error("Detection error:", error);
@@ -331,10 +336,21 @@ class SignLanguageDetector {
   }
 
   private detectCustomMedicalGestures(
-    results: HandLandmarkerResult | null
+    results: HandLandmarkerResult | null,
+    gestureResults?: GestureRecognizerResult
   ): DetectedSign | null {
     if (!results || !results.landmarks || results.landmarks.length === 0) {
       return null;
+    }
+
+    // If MediaPipe detected a known gesture, don't override with custom detection
+    // This prevents thumbs up/down from being misclassified
+    if (gestureResults?.gestures && gestureResults.gestures.length > 0) {
+      const detectedGesture = gestureResults.gestures[0][0];
+      const knownGestures = ["Thumb_Up", "Thumb_Down", "Open_Palm", "Closed_Fist", "Pointing_Up", "Victory", "ILoveYou"];
+      if (knownGestures.includes(detectedGesture.categoryName) && detectedGesture.score > 0.5) {
+        return null; // Let MediaPipe handle this gesture
+      }
     }
 
     const landmarks = results.landmarks[0];
@@ -343,24 +359,29 @@ class SignLanguageDetector {
     const indexTip = landmarks[HAND_LANDMARKS.INDEX_TIP];
     const wrist = landmarks[HAND_LANDMARKS.WRIST];
     const thumbTip = landmarks[HAND_LANDMARKS.THUMB_TIP];
+    const middleTip = landmarks[HAND_LANDMARKS.MIDDLE_TIP];
 
-    // Check if hand is in upper-middle area (chest region)
-    if (indexTip.y > 0.3 && indexTip.y < 0.7 && indexTip.x > 0.3 && indexTip.x < 0.7) {
-      // Check if fingers are mostly closed (fist near chest = chest pain)
-      const fingersClosed = this.areFingersClosed(landmarks);
-      if (fingersClosed) {
-        return {
-          name: "Chest Discomfort",
-          meaning: "I'm experiencing chest pain or pressure",
-          confidence: 75,
-          category: "emergency",
-          icon: "heart-pulse",
-        };
-      }
+    // For chest pain detection, require:
+    // 1. Hand in chest region
+    // 2. Fingers spread/open (palm on chest) OR flat hand
+    // 3. NOT a closed fist pointing outward (which could be thumbs up/down)
+    const isInChestRegion = indexTip.y > 0.35 && indexTip.y < 0.65 && indexTip.x > 0.35 && indexTip.x < 0.65;
+    const isHandFlat = this.isHandFlat(landmarks);
+    const isPalmFacingCamera = wrist.z > indexTip.z; // Palm is closer to camera than wrist
+
+    if (isInChestRegion && isHandFlat && isPalmFacingCamera) {
+      return {
+        name: "Chest Discomfort",
+        meaning: "I'm experiencing chest pain or pressure",
+        confidence: 75,
+        category: "emergency",
+        icon: "heart-pulse",
+      };
     }
 
     // Detect throat touch (hand near top, open palm facing in)
-    if (indexTip.y < 0.35 && wrist.y < 0.5) {
+    // Require hand to be clearly at throat level, not just raised
+    if (indexTip.y < 0.3 && wrist.y < 0.4 && isHandFlat) {
       return {
         name: "Throat / Breathing Issue",
         meaning: "I'm having trouble with my throat or breathing",
@@ -370,22 +391,19 @@ class SignLanguageDetector {
       };
     }
 
-    // Detect stomach touch (hand in lower middle)
-    if (indexTip.y > 0.6 && indexTip.x > 0.3 && indexTip.x < 0.7) {
-      const fingersClosed = this.areFingersClosed(landmarks);
-      if (fingersClosed) {
-        return {
-          name: "Stomach Pain",
-          meaning: "I'm experiencing abdominal/stomach pain",
-          confidence: 72,
-          category: "medical",
-          icon: "circle-dot",
-        };
-      }
+    // Detect stomach touch (hand in lower middle with flat/open hand)
+    if (indexTip.y > 0.65 && indexTip.x > 0.3 && indexTip.x < 0.7 && isHandFlat) {
+      return {
+        name: "Stomach Pain",
+        meaning: "I'm experiencing abdominal/stomach pain",
+        confidence: 72,
+        category: "medical",
+        icon: "circle-dot",
+      };
     }
 
-    // Detect head touch (hand at very top)
-    if (wrist.y < 0.25 && indexTip.y < 0.3) {
+    // Detect head touch (hand at very top with circular motion - simplified)
+    if (wrist.y < 0.2 && indexTip.y < 0.25) {
       return {
         name: "Head Pain / Dizziness",
         meaning: "I have a headache or feel dizzy",
@@ -396,6 +414,25 @@ class SignLanguageDetector {
     }
 
     return null;
+  }
+
+  private isHandFlat(landmarks: any[]): boolean {
+    // Check if fingers are extended and spread (flat/open hand)
+    const wrist = landmarks[HAND_LANDMARKS.WRIST];
+    const indexTip = landmarks[HAND_LANDMARKS.INDEX_TIP];
+    const middleTip = landmarks[HAND_LANDMARKS.MIDDLE_TIP];
+    const ringTip = landmarks[HAND_LANDMARKS.RING_TIP];
+    const pinkyTip = landmarks[HAND_LANDMARKS.PINKY_TIP];
+
+    // Fingers should be extended away from wrist
+    const indexExtended = Math.hypot(indexTip.x - wrist.x, indexTip.y - wrist.y) > 0.15;
+    const middleExtended = Math.hypot(middleTip.x - wrist.x, middleTip.y - wrist.y) > 0.15;
+    const ringExtended = Math.hypot(ringTip.x - wrist.x, ringTip.y - wrist.y) > 0.12;
+    const pinkyExtended = Math.hypot(pinkyTip.x - wrist.x, pinkyTip.y - wrist.y) > 0.1;
+
+    // At least 3 fingers should be extended for a flat hand
+    const extendedCount = [indexExtended, middleExtended, ringExtended, pinkyExtended].filter(Boolean).length;
+    return extendedCount >= 3;
   }
 
   private areFingersClosed(landmarks: any[]): boolean {
