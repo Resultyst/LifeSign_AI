@@ -16,8 +16,11 @@ import {
   AlertTriangle,
   HeartCrack,
   Stethoscope,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { useSignLanguageDetection } from "@/hooks/useSignLanguageDetection";
+import { useVoiceAnnouncement } from "@/hooks/useVoiceAnnouncement";
 import { DetectedSign } from "@/lib/signLanguageDetection";
 import { cn } from "@/lib/utils";
 
@@ -37,8 +40,14 @@ export function PatientModeScreen({
   const [cameraActive, setCameraActive] = useState(false);
   const [signLanguage, setSignLanguage] = useState<SignLanguage>("ASL");
   const [confirmedSign, setConfirmedSign] = useState<DetectedSign | null>(null);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const cameraRef = useRef<CameraPreviewHandle>(null);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
+
+  // Voice announcement hook
+  const { announceSign, cancel: cancelVoice, isSupported: voiceSupported } = useVoiceAnnouncement({
+    enabled: voiceEnabled,
+  });
 
   // Update video element reference when camera becomes active
   useEffect(() => {
@@ -60,8 +69,10 @@ export function PatientModeScreen({
     // Only set if confidence is high enough
     if (sign.confidence >= 70) {
       setConfirmedSign(sign);
+      // Announce the sign via voice
+      announceSign(sign.name, sign.meaning, sign.category);
     }
-  }, []);
+  }, [announceSign]);
 
   const {
     isInitializing,
@@ -79,7 +90,12 @@ export function PatientModeScreen({
     setCameraActive(newState);
     if (!newState) {
       setConfirmedSign(null);
+      cancelVoice();
     }
+  };
+
+  const toggleVoice = () => {
+    setVoiceEnabled((prev) => !prev);
   };
 
   const handleRetry = () => {
@@ -106,14 +122,35 @@ export function PatientModeScreen({
       />
 
       <div className="flex-1 px-4 py-6 max-w-lg mx-auto w-full space-y-6">
-        {/* Instructions */}
+        {/* Instructions & Voice Toggle */}
         <div className="text-center p-4 bg-primary/5 rounded-2xl border border-primary/10">
-          <Hand className="w-8 h-8 text-primary mx-auto mb-2" />
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Hand className="w-8 h-8 text-primary" />
+            {voiceSupported && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleVoice}
+                className={cn(
+                  "ml-2 h-8 px-2",
+                  voiceEnabled ? "text-primary" : "text-muted-foreground"
+                )}
+                title={voiceEnabled ? "Voice announcements on" : "Voice announcements off"}
+              >
+                {voiceEnabled ? (
+                  <Volume2 className="w-5 h-5" />
+                ) : (
+                  <VolumeX className="w-5 h-5" />
+                )}
+              </Button>
+            )}
+          </div>
           <p className="text-lg font-semibold text-foreground mb-1">
             Sign here or point to symptoms
           </p>
           <p className="text-sm text-muted-foreground">
             The camera will recognize your signs and translate them
+            {voiceEnabled && voiceSupported && " (voice announcements on)"}
           </p>
         </div>
 
