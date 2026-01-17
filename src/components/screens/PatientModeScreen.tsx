@@ -1,11 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { CameraPreview } from "@/components/ui/CameraPreview";
+import { CameraPreview, CameraPreviewHandle } from "@/components/ui/CameraPreview";
 import { SignLanguageSelector, SignLanguage } from "@/components/ui/SignLanguageSelector";
 import { ConfidenceIndicator } from "@/components/ui/ConfidenceIndicator";
 import { PrivacyBanner } from "@/components/ui/PrivacyBanner";
+import { SampleSignsGuide } from "@/components/ui/SampleSignsGuide";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, RefreshCw, Check, Hand } from "lucide-react";
+import { ChevronRight, RefreshCw, Check, Hand, Loader2, Sparkles } from "lucide-react";
+import { useSignLanguageDetection } from "@/hooks/useSignLanguageDetection";
+import { DetectedSign } from "@/lib/signLanguageDetection";
 
 interface PatientModeScreenProps {
   onBack: () => void;
@@ -13,16 +16,6 @@ interface PatientModeScreenProps {
   isHighContrast: boolean;
   onToggleHighContrast: () => void;
 }
-
-// Simulated AI responses
-const simulatedResponses = [
-  "I have pain in my chest",
-  "I feel dizzy",
-  "I cannot breathe well",
-  "My stomach hurts",
-  "I feel very tired",
-  "I have a headache",
-];
 
 export function PatientModeScreen({
   onBack,
@@ -32,48 +25,62 @@ export function PatientModeScreen({
 }: PatientModeScreenProps) {
   const [cameraActive, setCameraActive] = useState(false);
   const [signLanguage, setSignLanguage] = useState<SignLanguage>("ASL");
-  const [recognizedText, setRecognizedText] = useState<string | null>(null);
-  const [confidence, setConfidence] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [confirmedSign, setConfirmedSign] = useState<DetectedSign | null>(null);
+  const cameraRef = useRef<CameraPreviewHandle>(null);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
 
-  const simulateRecognition = useCallback(() => {
-    if (!cameraActive) return;
-
-    setIsProcessing(true);
-    setRecognizedText(null);
-
-    // Simulate AI processing delay
-    setTimeout(() => {
-      const randomText = simulatedResponses[Math.floor(Math.random() * simulatedResponses.length)];
-      const randomConfidence = Math.floor(Math.random() * 30) + 70; // 70-100%
-      
-      setRecognizedText(randomText);
-      setConfidence(randomConfidence);
-      setIsProcessing(false);
-      
-      // Haptic feedback simulation (would use navigator.vibrate on real device)
-      if (window.navigator.vibrate) {
-        window.navigator.vibrate(100);
-      }
-    }, 1500);
+  // Update video element reference when camera becomes active
+  useEffect(() => {
+    if (cameraActive && cameraRef.current) {
+      // Small delay to ensure video is mounted
+      const timer = setTimeout(() => {
+        setVideoElement(cameraRef.current?.getVideoElement() || null);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setVideoElement(null);
+    }
   }, [cameraActive]);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  videoRef.current = videoElement;
+
+  const handleSignDetected = useCallback((sign: DetectedSign) => {
+    // Only set if confidence is high enough
+    if (sign.confidence >= 70) {
+      setConfirmedSign(sign);
+    }
+  }, []);
+
+  const {
+    isInitializing,
+    isDetecting,
+    error: detectionError,
+    currentSign,
+  } = useSignLanguageDetection({
+    videoRef,
+    isActive: cameraActive && !!videoElement,
+    onSignDetected: handleSignDetected,
+  });
 
   const handleCameraToggle = () => {
     const newState = !cameraActive;
     setCameraActive(newState);
-    
-    if (newState) {
-      // Auto-simulate recognition when camera turns on
-      setTimeout(simulateRecognition, 2000);
-    } else {
-      setRecognizedText(null);
-      setConfidence(0);
+    if (!newState) {
+      setConfirmedSign(null);
     }
   };
 
   const handleRetry = () => {
-    setRecognizedText(null);
-    simulateRecognition();
+    setConfirmedSign(null);
+  };
+
+  const getStatusMessage = () => {
+    if (isInitializing) return "Loading AI model...";
+    if (detectionError) return "Detection error";
+    if (currentSign) return `Detected: ${currentSign.name}`;
+    if (isDetecting) return "Show a sign...";
+    return "Position hands in frame";
   };
 
   return (
@@ -104,68 +111,104 @@ export function PatientModeScreen({
 
         {/* Camera Preview */}
         <CameraPreview
+          ref={cameraRef}
           isActive={cameraActive}
           onToggle={handleCameraToggle}
           className="mt-8 mb-8"
+          statusMessage={getStatusMessage()}
         />
 
-        {/* Recognition Results */}
-        {(isProcessing || recognizedText) && (
-          <div className="space-y-4 animate-fade-in mt-8">
-            {isProcessing ? (
-              <div className="p-6 bg-muted rounded-2xl text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <span className="text-sm font-medium">Processing signs...</span>
-                  <div className="flex gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </div>
-                </div>
-              </div>
-            ) : recognizedText && (
-              <>
-                <div className="p-5 bg-card border-2 border-primary rounded-2xl shadow-sm">
-                  <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-semibold">
-                    Recognized ({signLanguage})
-                  </p>
-                  <p className="text-xl font-bold leading-relaxed">{recognizedText}</p>
-                </div>
-
-                <ConfidenceIndicator confidence={confidence} label="Recognition Confidence" />
-
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    className="flex-1 h-14 text-base"
-                    onClick={handleRetry}
-                  >
-                    <RefreshCw className="w-5 h-5 mr-2" />
-                    Try Again
-                  </Button>
-                  <Button
-                    className="flex-1 h-14 text-base bg-success hover:bg-success/90"
-                    onClick={onGoToSymptoms}
-                  >
-                    <Check className="w-5 h-5 mr-2" />
-                    Correct
-                  </Button>
-                </div>
-              </>
-            )}
+        {/* AI Loading Indicator */}
+        {cameraActive && isInitializing && (
+          <div className="flex items-center justify-center gap-2 p-4 bg-primary/5 rounded-xl">
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+            <span className="text-sm font-medium text-muted-foreground">
+              Loading sign language AI model...
+            </span>
           </div>
         )}
 
-        {/* Alternative: Point to symptoms */}
-        {!cameraActive && !recognizedText && (
-          <Button
-            variant="outline"
-            className="w-full h-14 text-base mt-4"
-            onClick={onGoToSymptoms}
-          >
-            Or point to symptoms instead
-            <ChevronRight className="w-5 h-5 ml-2" />
-          </Button>
+        {/* Real-time Detection Display */}
+        {cameraActive && isDetecting && currentSign && !confirmedSign && (
+          <div className="animate-fade-in p-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl">
+            <div className="flex items-center gap-3">
+              <Sparkles className="w-6 h-6 text-amber-500" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">
+                  Detecting: {currentSign.name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Hold steady for confirmation...
+                </p>
+              </div>
+              <span className="text-lg font-bold text-amber-600">
+                {currentSign.confidence}%
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Confirmed Recognition Result */}
+        {confirmedSign && (
+          <div className="space-y-4 animate-fade-in mt-4">
+            <div className="p-5 bg-card border-2 border-success rounded-2xl shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <Check className="w-5 h-5 text-success" />
+                <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">
+                  Recognized Sign ({signLanguage})
+                </p>
+              </div>
+              <p className="text-xl font-bold leading-relaxed">{confirmedSign.name}</p>
+              <p className="text-base text-muted-foreground mt-1">
+                Meaning: "{confirmedSign.meaning}"
+              </p>
+            </div>
+
+            <ConfidenceIndicator
+              confidence={confirmedSign.confidence}
+              label="Recognition Confidence"
+            />
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 h-14 text-base"
+                onClick={handleRetry}
+              >
+                <RefreshCw className="w-5 h-5 mr-2" />
+                Try Again
+              </Button>
+              <Button
+                className="flex-1 h-14 text-base bg-success hover:bg-success/90"
+                onClick={onGoToSymptoms}
+              >
+                <Check className="w-5 h-5 mr-2" />
+                Continue
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Sample Signs Guide - shown when camera is off or no detection */}
+        {!cameraActive && !confirmedSign && (
+          <div className="space-y-4">
+            <SampleSignsGuide />
+            <Button
+              variant="outline"
+              className="w-full h-14 text-base"
+              onClick={onGoToSymptoms}
+            >
+              Or point to symptoms instead
+              <ChevronRight className="w-5 h-5 ml-2" />
+            </Button>
+          </div>
+        )}
+
+        {/* Detection Error */}
+        {detectionError && (
+          <div className="p-4 bg-critical/10 border border-critical/30 rounded-xl">
+            <p className="text-sm text-critical font-medium">{detectionError}</p>
+          </div>
         )}
 
         {/* Privacy Banner */}
