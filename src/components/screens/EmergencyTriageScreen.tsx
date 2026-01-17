@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { PainScale } from "@/components/ui/PainScale";
 import { QuickActionButton } from "@/components/ui/QuickActionButton";
 import { SignAvatar } from "@/components/ui/SignAvatar";
+import { CameraPreview, CameraPreviewHandle } from "@/components/ui/CameraPreview";
 import { Button } from "@/components/ui/button";
+import { signLanguageDetector } from "@/lib/signLanguageDetection";
 import {
   Heart,
   Wind,
@@ -14,6 +16,8 @@ import {
   ChevronRight,
   Check,
   Volume2,
+  Camera,
+  Hand,
 } from "lucide-react";
 
 interface EmergencyTriageScreenProps {
@@ -43,6 +47,15 @@ export function EmergencyTriageScreen({
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [isShowingAvatar, setIsShowingAvatar] = useState(true);
   const [elapsedTime, setElapsedTime] = useState(0);
+  
+  // Sign language detection for pain rating
+  const [useSignDetection, setUseSignDetection] = useState(false);
+  const [detectedNumber, setDetectedNumber] = useState<number | null>(null);
+  const [isDetectorReady, setIsDetectorReady] = useState(false);
+  const [stableCount, setStableCount] = useState(0);
+  const lastDetectedRef = useRef<number | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const cameraRef = useRef<CameraPreviewHandle>(null);
 
   // Timer
   useEffect(() => {
@@ -51,6 +64,62 @@ export function EmergencyTriageScreen({
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Initialize sign language detector when camera mode is enabled
+  useEffect(() => {
+    if (useSignDetection && !isDetectorReady) {
+      signLanguageDetector.initialize().then(() => {
+        setIsDetectorReady(true);
+      });
+    }
+  }, [useSignDetection, isDetectorReady]);
+
+  // Run finger count detection loop
+  useEffect(() => {
+    if (!useSignDetection || !isDetectorReady) {
+      return;
+    }
+
+    const detectLoop = () => {
+      const videoElement = cameraRef.current?.getVideoElement();
+      if (videoElement && videoElement.readyState >= 2) {
+        const result = signLanguageDetector.detectFingerCount(
+          videoElement,
+          performance.now()
+        );
+        
+        if (result && result.numericValue !== undefined) {
+          const num = result.numericValue;
+          
+          // Check stability - same number detected multiple times
+          if (num === lastDetectedRef.current) {
+            setStableCount((prev) => prev + 1);
+          } else {
+            setStableCount(0);
+            lastDetectedRef.current = num;
+          }
+          
+          setDetectedNumber(num);
+          
+          // Auto-confirm after stable detection (30 frames ≈ 0.5 seconds)
+          if (stableCount >= 30 && num === lastDetectedRef.current) {
+            setPainLevel(num);
+            setStableCount(0);
+          }
+        }
+      }
+      
+      animationFrameRef.current = requestAnimationFrame(detectLoop);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(detectLoop);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [useSignDetection, isDetectorReady, stableCount]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -65,6 +134,7 @@ export function EmergencyTriageScreen({
 
   const handlePainConfirm = () => {
     if (painLevel !== null) {
+      setUseSignDetection(false);
       setCurrentStep("location");
       setIsShowingAvatar(true);
     }
@@ -214,7 +284,67 @@ export function EmergencyTriageScreen({
             {/* Pain Scale */}
             {currentStep === "pain" && (
               <div className="space-y-6 animate-fade-in">
-                <PainScale value={painLevel} onChange={setPainLevel} />
+                {/* Toggle between manual and sign detection */}
+                <div className="flex gap-2 justify-center">
+                  <Button
+                    variant={!useSignDetection ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setUseSignDetection(false)}
+                  >
+                    <Hand className="w-4 h-4 mr-2" />
+                    Tap to Select
+                  </Button>
+                  <Button
+                    variant={useSignDetection ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setUseSignDetection(true)}
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Show Fingers
+                  </Button>
+                </div>
+
+                {useSignDetection ? (
+                  <div className="space-y-4">
+                    {/* Camera preview */}
+                    <div className="relative">
+                      <CameraPreview
+                        ref={cameraRef}
+                        isActive={true}
+                        onToggle={() => setUseSignDetection(false)}
+                        className="rounded-2xl overflow-hidden"
+                      />
+                      
+                      {/* Detected number overlay */}
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-background/90 backdrop-blur-sm rounded-full px-6 py-3 border border-border">
+                        <div className="flex items-center gap-3">
+                          <span className="text-muted-foreground">Detected:</span>
+                          <span className="text-3xl font-bold text-primary">
+                            {detectedNumber !== null ? detectedNumber : "—"}
+                          </span>
+                          {stableCount > 10 && detectedNumber !== null && (
+                            <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Instructions */}
+                    <p className="text-center text-sm text-muted-foreground">
+                      Hold up fingers (0-10) to indicate pain level. Keep steady for auto-confirm.
+                    </p>
+
+                    {/* Selected pain level */}
+                    {painLevel !== null && (
+                      <div className="text-center p-3 bg-primary/10 rounded-xl animate-fade-in">
+                        <span className="text-lg">Pain Level: <strong className="text-2xl">{painLevel}</strong>/10</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <PainScale value={painLevel} onChange={setPainLevel} />
+                )}
+
                 <Button
                   className="w-full h-14 text-lg"
                   onClick={handlePainConfirm}

@@ -10,8 +10,9 @@ export interface DetectedSign {
   name: string;
   meaning: string;
   confidence: number;
-  category?: "general" | "medical" | "emergency";
+  category?: "general" | "medical" | "emergency" | "number";
   icon?: string;
+  numericValue?: number; // For number detection (0-10)
 }
 
 export interface MedicalGesture {
@@ -155,13 +156,26 @@ const MEDICAL_GESTURE_MAPPINGS: Record<string, MedicalGestureMapping> = {
 // Hand landmark indices for custom gesture detection
 const HAND_LANDMARKS = {
   WRIST: 0,
+  THUMB_CMC: 1,
+  THUMB_MCP: 2,
+  THUMB_IP: 3,
   THUMB_TIP: 4,
-  INDEX_TIP: 8,
-  MIDDLE_TIP: 12,
-  RING_TIP: 16,
-  PINKY_TIP: 20,
   INDEX_MCP: 5,
+  INDEX_PIP: 6,
+  INDEX_DIP: 7,
+  INDEX_TIP: 8,
   MIDDLE_MCP: 9,
+  MIDDLE_PIP: 10,
+  MIDDLE_DIP: 11,
+  MIDDLE_TIP: 12,
+  RING_MCP: 13,
+  RING_PIP: 14,
+  RING_DIP: 15,
+  RING_TIP: 16,
+  PINKY_MCP: 17,
+  PINKY_PIP: 18,
+  PINKY_DIP: 19,
+  PINKY_TIP: 20,
 };
 
 class SignLanguageDetector {
@@ -533,6 +547,77 @@ class SignLanguageDetector {
   // Get gesture sequence for complex meanings
   getRecentGestureSequence(): string[] {
     return this.gestureHistory.map((g) => g.gesture);
+  }
+
+  // Detect number of fingers held up (0-10 for pain scale)
+  detectFingerCount(video: HTMLVideoElement, timestamp: number): DetectedSign | null {
+    if (!this.handLandmarker || video.readyState < 2) {
+      return null;
+    }
+
+    try {
+      const handResults = this.handLandmarker.detectForVideo(video, timestamp);
+      
+      if (!handResults || !handResults.landmarks || handResults.landmarks.length === 0) {
+        return null;
+      }
+
+      let totalFingers = 0;
+
+      // Count fingers for each detected hand
+      for (const landmarks of handResults.landmarks) {
+        totalFingers += this.countExtendedFingers(landmarks);
+      }
+
+      // Cap at 10
+      totalFingers = Math.min(totalFingers, 10);
+
+      return {
+        name: `Number ${totalFingers}`,
+        meaning: `${totalFingers}`,
+        confidence: 85,
+        category: "number",
+        icon: "hash",
+        numericValue: totalFingers,
+      };
+    } catch (error) {
+      console.error("Finger count detection error:", error);
+      return null;
+    }
+  }
+
+  private countExtendedFingers(landmarks: any[]): number {
+    let count = 0;
+    const wrist = landmarks[HAND_LANDMARKS.WRIST];
+
+    // Check thumb - compare tip to IP joint horizontally
+    const thumbTip = landmarks[HAND_LANDMARKS.THUMB_TIP];
+    const thumbIp = landmarks[HAND_LANDMARKS.THUMB_IP];
+    const thumbMcp = landmarks[HAND_LANDMARKS.THUMB_MCP];
+    
+    // Thumb is extended if tip is far from wrist
+    const thumbExtended = Math.hypot(thumbTip.x - thumbMcp.x, thumbTip.y - thumbMcp.y) > 0.06;
+    if (thumbExtended) count++;
+
+    // Check other fingers - tip should be higher (lower y) than PIP joint
+    const fingerConfigs = [
+      { tip: HAND_LANDMARKS.INDEX_TIP, pip: HAND_LANDMARKS.INDEX_PIP },
+      { tip: HAND_LANDMARKS.MIDDLE_TIP, pip: HAND_LANDMARKS.MIDDLE_PIP },
+      { tip: HAND_LANDMARKS.RING_TIP, pip: HAND_LANDMARKS.RING_PIP },
+      { tip: HAND_LANDMARKS.PINKY_TIP, pip: HAND_LANDMARKS.PINKY_PIP },
+    ];
+
+    for (const { tip, pip } of fingerConfigs) {
+      const tipLandmark = landmarks[tip];
+      const pipLandmark = landmarks[pip];
+      
+      // Finger is extended if tip is above (lower y value) the PIP joint
+      if (tipLandmark.y < pipLandmark.y - 0.02) {
+        count++;
+      }
+    }
+
+    return count;
   }
 
   isReady(): boolean {
