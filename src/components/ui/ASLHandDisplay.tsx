@@ -211,9 +211,9 @@ export function ASLHandDisplay({
   className,
 }: ASLHandDisplayProps) {
   const sizeConfig = {
-    sm: { container: "w-28 h-40", fingerW: 10, fingerH: 36, thumbH: 28, palmW: 44, palmH: 48 },
-    md: { container: "w-36 h-52", fingerW: 13, fingerH: 48, thumbH: 36, palmW: 56, palmH: 62 },
-    lg: { container: "w-48 h-68", fingerW: 16, fingerH: 62, thumbH: 46, palmW: 72, palmH: 80 },
+    sm: { container: "w-32 h-56", fingerW: 10, fingerH: 36, thumbH: 28, palmW: 44, palmH: 48, wristW: 36, wristH: 20, armW: 32, armH: 40 },
+    md: { container: "w-40 h-72", fingerW: 13, fingerH: 48, thumbH: 36, palmW: 56, palmH: 62, wristW: 46, wristH: 26, armW: 40, armH: 52 },
+    lg: { container: "w-52 h-88", fingerW: 16, fingerH: 62, thumbH: 46, palmW: 72, palmH: 80, wristW: 58, wristH: 32, armW: 50, armH: 65 },
   };
 
   const dims = sizeConfig[size];
@@ -284,13 +284,69 @@ export function ASLHandDisplay({
       )}
       style={{ transform: `rotate(${rotation}deg)` }}
     >
+      {/* Arm base */}
+      <div
+        className="absolute bg-gradient-to-b from-amber-300 via-amber-350 to-amber-400 dark:from-amber-700 dark:via-amber-750 dark:to-amber-800 shadow-md"
+        style={{
+          width: dims.armW,
+          height: dims.armH,
+          bottom: 0,
+          left: "50%",
+          transform: "translateX(-50%)",
+          borderRadius: "10% 10% 0 0",
+          border: "1px solid rgba(180, 130, 80, 0.25)",
+        }}
+      >
+        {/* Arm shading for depth */}
+        <div 
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+          style={{ borderRadius: "10% 10% 0 0" }}
+        />
+      </div>
+
+      {/* Wrist */}
+      <div
+        className="absolute bg-gradient-to-b from-amber-250 via-amber-300 to-amber-350 dark:from-amber-650 dark:via-amber-700 dark:to-amber-750 shadow-md"
+        style={{
+          width: dims.wristW,
+          height: dims.wristH,
+          bottom: dims.armH - 4,
+          left: "50%",
+          transform: "translateX(-50%)",
+          borderRadius: "20% 20% 15% 15%",
+          border: "1px solid rgba(180, 130, 80, 0.2)",
+        }}
+      >
+        {/* Wrist bone indication */}
+        <div 
+          className="absolute bg-amber-400/20 dark:bg-amber-600/30 rounded-full"
+          style={{
+            width: dims.wristW * 0.25,
+            height: dims.wristH * 0.5,
+            left: dims.wristW * 0.15,
+            top: "50%",
+            transform: "translateY(-50%)",
+          }}
+        />
+        <div 
+          className="absolute bg-amber-400/20 dark:bg-amber-600/30 rounded-full"
+          style={{
+            width: dims.wristW * 0.25,
+            height: dims.wristH * 0.5,
+            right: dims.wristW * 0.15,
+            top: "50%",
+            transform: "translateY(-50%)",
+          }}
+        />
+      </div>
+
       {/* Palm with details */}
       <div
         className="absolute bg-gradient-to-br from-amber-200 via-amber-250 to-amber-300 dark:from-amber-600 dark:via-amber-650 dark:to-amber-700 shadow-lg"
         style={{
           width: dims.palmW,
           height: dims.palmH,
-          bottom: 12,
+          bottom: dims.armH + dims.wristH - 8,
           left: "50%",
           transform: "translateX(-50%)",
           borderRadius: "35% 35% 45% 45%",
@@ -325,13 +381,24 @@ export function ASLHandDisplay({
             className="text-amber-700"
           />
         </svg>
+        
+        {/* Thumb muscle (thenar eminence) */}
+        <div 
+          className="absolute bg-gradient-to-br from-amber-300/40 to-transparent rounded-full"
+          style={{
+            width: dims.palmW * 0.4,
+            height: dims.palmH * 0.35,
+            left: -2,
+            bottom: dims.palmH * 0.25,
+          }}
+        />
       </div>
 
       {/* Thumb */}
       <div
         className="absolute"
         style={{
-          bottom: dims.palmH * 0.55 + 12,
+          bottom: dims.armH + dims.wristH + dims.palmH * 0.45,
           left: `calc(50% - ${dims.palmW / 2 + 4}px)`,
         }}
       >
@@ -348,7 +415,7 @@ export function ASLHandDisplay({
       <div
         className="absolute flex items-end justify-center"
         style={{
-          bottom: dims.palmH + 8,
+          bottom: dims.armH + dims.wristH + dims.palmH - 4,
           left: "50%",
           transform: "translateX(-50%)",
           gap: 2,
