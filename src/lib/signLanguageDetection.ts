@@ -355,12 +355,45 @@ class SignLanguageDetector {
 
     const landmarks = results.landmarks[0];
 
-    // Detect "pointing to chest" gesture (hand near center, pointing down/in)
     const indexTip = landmarks[HAND_LANDMARKS.INDEX_TIP];
     const wrist = landmarks[HAND_LANDMARKS.WRIST];
     const thumbTip = landmarks[HAND_LANDMARKS.THUMB_TIP];
     const middleTip = landmarks[HAND_LANDMARKS.MIDDLE_TIP];
 
+    // ===== MEDICINE / PILLS GESTURE =====
+    // Thumb near mouth area (pill-taking gesture)
+    // Thumb tip should be in upper portion of frame (near face/mouth)
+    const isThumbNearMouth = thumbTip.y < 0.35 && thumbTip.x > 0.35 && thumbTip.x < 0.65;
+    const isThumbHigherThanWrist = thumbTip.y < wrist.y - 0.1;
+    const areFingersCurled = this.areFingersClosed(landmarks);
+    
+    if (isThumbNearMouth && isThumbHigherThanWrist && areFingersCurled) {
+      return {
+        name: "Medicine / Pills",
+        meaning: "I need medicine",
+        confidence: 78,
+        category: "medical",
+        icon: "pill",
+      };
+    }
+
+    // ===== DIZZY / FAINT GESTURE =====
+    // Circular motion near head OR finger pointing at temple
+    // Index finger near head/temple region
+    const isNearHead = indexTip.y < 0.3 && (indexTip.x < 0.35 || indexTip.x > 0.65);
+    const isIndexPointing = !this.isHandFlat(landmarks);
+    
+    if (isNearHead && isIndexPointing) {
+      return {
+        name: "Dizzy / Faint",
+        meaning: "I feel dizzy or faint",
+        confidence: 75,
+        category: "medical",
+        icon: "loader",
+      };
+    }
+
+    // ===== CHEST DISCOMFORT =====
     // For chest pain detection, require:
     // 1. Hand in chest region
     // 2. Fingers spread/open (palm on chest) OR flat hand
@@ -372,44 +405,61 @@ class SignLanguageDetector {
     if (isInChestRegion && isHandFlat && isPalmFacingCamera) {
       return {
         name: "Chest Discomfort",
-        meaning: "I'm experiencing chest pain or pressure",
+        meaning: "I'm experiencing chest pain",
         confidence: 75,
         category: "emergency",
         icon: "heart-pulse",
       };
     }
 
-    // Detect throat touch (hand near top, open palm facing in)
+    // ===== THROAT / BREATHING ISSUE =====
     // Require hand to be clearly at throat level, not just raised
     if (indexTip.y < 0.3 && wrist.y < 0.4 && isHandFlat) {
       return {
-        name: "Throat / Breathing Issue",
-        meaning: "I'm having trouble with my throat or breathing",
+        name: "Breathing Issue",
+        meaning: "I'm having trouble breathing",
         confidence: 70,
         category: "emergency",
         icon: "wind",
       };
     }
 
+    // ===== STOMACH PAIN =====
     // Detect stomach touch (hand in lower middle with flat/open hand)
     if (indexTip.y > 0.65 && indexTip.x > 0.3 && indexTip.x < 0.7 && isHandFlat) {
       return {
         name: "Stomach Pain",
-        meaning: "I'm experiencing abdominal/stomach pain",
+        meaning: "I have stomach pain",
         confidence: 72,
         category: "medical",
         icon: "circle-dot",
       };
     }
 
-    // Detect head touch (hand at very top with circular motion - simplified)
-    if (wrist.y < 0.2 && indexTip.y < 0.25) {
+    // ===== HEADACHE =====
+    // Detect head touch (hand at very top)
+    if (wrist.y < 0.2 && indexTip.y < 0.25 && isHandFlat) {
       return {
-        name: "Head Pain / Dizziness",
-        meaning: "I have a headache or feel dizzy",
+        name: "Headache",
+        meaning: "I have a headache",
         confidence: 70,
         category: "medical",
         icon: "brain",
+      };
+    }
+
+    // ===== ALLERGIC REACTION =====
+    // Scratching motion on arm - hand moving across body horizontally
+    const isOnArm = indexTip.x < 0.25 || indexTip.x > 0.75;
+    const isMidHeight = indexTip.y > 0.4 && indexTip.y < 0.7;
+    
+    if (isOnArm && isMidHeight && !isHandFlat) {
+      return {
+        name: "Allergic Reaction",
+        meaning: "I'm having an allergic reaction",
+        confidence: 68,
+        category: "emergency",
+        icon: "shield-alert",
       };
     }
 
