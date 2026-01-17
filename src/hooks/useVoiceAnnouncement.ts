@@ -78,19 +78,10 @@ export function useVoiceAnnouncement({
       meaning: string,
       category?: "emergency" | "medical" | "general"
     ) => {
-      let announcement: string;
-      let priority: "high" | "normal" = "normal";
-
-      if (category === "emergency") {
-        announcement = `Emergency sign detected: ${signName}. Patient indicates: ${meaning}`;
-        priority = "high";
-      } else if (category === "medical") {
-        announcement = `Medical sign: ${signName}. Meaning: ${meaning}`;
-      } else {
-        announcement = `Sign detected: ${signName}. Meaning: ${meaning}`;
-      }
-
-      speak(announcement, { priority });
+      // Only announce the main meaning, not the full description
+      const priority: "high" | "normal" = category === "emergency" ? "high" : "normal";
+      
+      speak(meaning, { priority });
     },
     [speak]
   );
