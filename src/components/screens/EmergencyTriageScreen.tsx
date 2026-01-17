@@ -57,13 +57,15 @@ export function EmergencyTriageScreen({
   const animationFrameRef = useRef<number | null>(null);
   const cameraRef = useRef<CameraPreviewHandle>(null);
 
-  // Timer
+  // Timer - stops when triage is complete
   useEffect(() => {
+    if (currentStep === "complete") return;
+    
     const timer = setInterval(() => {
       setElapsedTime((t) => t + 1);
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [currentStep]);
 
   // Initialize sign language detector when camera mode is enabled
   useEffect(() => {
