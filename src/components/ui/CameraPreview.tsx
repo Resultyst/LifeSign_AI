@@ -144,52 +144,6 @@ export const CameraPreview = forwardRef<CameraPreviewHandle, CameraPreviewProps>
                 />
               )}
 
-              {/* Hand positioning guide overlay */}
-              {hasPermission && !error && showGuide && !currentSign && (
-                <div className="absolute inset-0 pointer-events-none">
-                  {/* Corner brackets for main frame */}
-                  <div className="absolute inset-6">
-                    {/* Top-left corner */}
-                    <div className="absolute top-0 left-0 w-8 h-8 border-t-3 border-l-3 border-primary/60 rounded-tl-lg" />
-                    {/* Top-right corner */}
-                    <div className="absolute top-0 right-0 w-8 h-8 border-t-3 border-r-3 border-primary/60 rounded-tr-lg" />
-                    {/* Bottom-left corner */}
-                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-3 border-l-3 border-primary/60 rounded-bl-lg" />
-                    {/* Bottom-right corner */}
-                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-3 border-r-3 border-primary/60 rounded-br-lg" />
-                  </div>
-
-                  {/* Hand silhouette zones */}
-                  <div className="absolute inset-0 flex items-center justify-center gap-8">
-                    {/* Left hand zone */}
-                    <div className="relative w-24 h-32 border-2 border-dashed border-accent/40 rounded-xl flex flex-col items-center justify-center bg-accent/5">
-                      <Hand className="w-10 h-10 text-accent/50 rotate-[-15deg]" />
-                      <span className="absolute -bottom-5 text-[10px] font-medium text-accent/70 whitespace-nowrap">Left Hand</span>
-                    </div>
-                    
-                    {/* Right hand zone */}
-                    <div className="relative w-24 h-32 border-2 border-dashed border-accent/40 rounded-xl flex flex-col items-center justify-center bg-accent/5">
-                      <Hand className="w-10 h-10 text-accent/50 rotate-[15deg] scale-x-[-1]" />
-                      <span className="absolute -bottom-5 text-[10px] font-medium text-accent/70 whitespace-nowrap">Right Hand</span>
-                    </div>
-                  </div>
-
-                  {/* Center target for single-hand gestures */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full border border-primary/20 flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-primary/30 animate-pulse" />
-                  </div>
-
-                  {/* Vertical center line */}
-                  <div className="absolute top-12 bottom-20 left-1/2 w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent" />
-
-                  {/* Top hint */}
-                  <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-background/60 rounded-full backdrop-blur-sm">
-                    <span className="text-[10px] font-medium text-muted-foreground">
-                      Keep hands visible • Move slowly
-                    </span>
-                  </div>
-                </div>
-              )}
 
               {/* Status message - always visible when camera active */}
               {hasPermission && !error && (
