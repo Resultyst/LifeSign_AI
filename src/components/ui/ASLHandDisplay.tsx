@@ -311,9 +311,9 @@ export function ASLHandDisplay({
   className,
 }: ASLHandDisplayProps) {
   const sizeConfig = {
-    sm: { container: "w-36 h-64", fingerW: 13, fingerH: 48, thumbH: 34, palmW: 52, palmH: 56, wristW: 42, wristH: 20, armW: 36, armH: 36 },
-    md: { container: "w-48 h-80", fingerW: 16, fingerH: 62, thumbH: 44, palmW: 66, palmH: 72, wristW: 54, wristH: 24, armW: 44, armH: 44 },
-    lg: { container: "w-60 h-[26rem]", fingerW: 20, fingerH: 78, thumbH: 56, palmW: 84, palmH: 92, wristW: 68, wristH: 30, armW: 54, armH: 52 },
+    sm: { container: "w-32 h-48", fingerW: 11, fingerH: 38, thumbH: 28, palmW: 44, palmH: 46, wristW: 36, wristH: 16, armW: 30, armH: 28 },
+    md: { container: "w-40 h-60", fingerW: 13, fingerH: 48, thumbH: 36, palmW: 54, palmH: 56, wristW: 44, wristH: 20, armW: 36, armH: 34 },
+    lg: { container: "w-52 h-80", fingerW: 16, fingerH: 62, thumbH: 46, palmW: 68, palmH: 72, wristW: 56, wristH: 24, armW: 44, armH: 42 },
   };
 
   const dims = sizeConfig[size];
