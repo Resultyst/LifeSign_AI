@@ -48,10 +48,14 @@ export function StaffModeScreen({
     setIsAnimating(true);
     setCurrentMessage(message);
 
-    // Simulate avatar animation duration
+    // Calculate duration based on message length (600ms per character + buffer)
+    const letterDuration = 600;
+    const messageLength = message.replace(/[^a-zA-Z ]/g, '').length; // Only count letters and spaces
+    const totalDuration = messageLength * letterDuration + 500; // Add 500ms buffer
+
     setTimeout(() => {
       setIsAnimating(false);
-    }, 3000);
+    }, totalDuration);
   };
 
   const handlePhraseClick = (phrase: string) => {
