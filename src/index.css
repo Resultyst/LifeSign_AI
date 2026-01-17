@@ -2,95 +2,117 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* LifeSign AI Design System - Accessibility First */
+    
+    /* Core Background & Text */
+    --background: 210 20% 98%;
+    --foreground: 220 25% 10%;
 
+    /* Card Surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 25% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 220 25% 10%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Medical Blue (Trust, Authority) */
+    --primary: 210 80% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 210 80% 38%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Soft Blue-Gray */
+    --secondary: 210 25% 93%;
+    --secondary-foreground: 220 25% 20%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted */
+    --muted: 210 20% 96%;
+    --muted-foreground: 220 10% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent - Teal (Confirmation, Success) */
+    --accent: 175 70% 40%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Urgent - Warm Amber (Attention without panic) */
+    --urgent: 35 95% 50%;
+    --urgent-foreground: 35 95% 15%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Critical - Deep Orange-Red (Life-threatening) */
+    --critical: 15 90% 50%;
+    --critical-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    /* Success - Teal Green */
+    --success: 160 60% 45%;
+    --success-foreground: 0 0% 100%;
 
-    --sidebar-background: 0 0% 98%;
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Borders & Inputs */
+    --border: 210 20% 88%;
+    --input: 210 20% 88%;
+    --ring: 210 80% 45%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    --radius: 1rem;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    /* Sidebar */
+    --sidebar-background: 210 20% 96%;
+    --sidebar-foreground: 220 25% 20%;
+    --sidebar-primary: 210 80% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 25% 90%;
+    --sidebar-accent-foreground: 220 25% 20%;
+    --sidebar-border: 210 20% 88%;
+    --sidebar-ring: 210 80% 45%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    /* Custom LifeSign tokens */
+    --patient-gradient: linear-gradient(135deg, hsl(210 80% 45%), hsl(175 70% 45%));
+    --staff-gradient: linear-gradient(135deg, hsl(210 80% 45%), hsl(250 60% 55%));
+    --emergency-gradient: linear-gradient(135deg, hsl(35 95% 50%), hsl(15 90% 50%));
+    --shadow-soft: 0 4px 20px -4px hsl(220 25% 10% / 0.1);
+    --shadow-elevated: 0 8px 30px -6px hsl(220 25% 10% / 0.15);
+    --shadow-critical: 0 4px 20px -4px hsl(15 90% 50% / 0.3);
+  }
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+  /* High Contrast Mode */
+  .high-contrast {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --primary: 210 100% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 90%;
+    --muted-foreground: 0 0% 20%;
+    --border: 0 0% 0%;
+    --urgent: 35 100% 45%;
+    --critical: 0 100% 45%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 220 25% 8%;
+    --foreground: 210 20% 96%;
+    --card: 220 25% 12%;
+    --card-foreground: 210 20% 96%;
+    --popover: 220 25% 12%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 210 80% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 20% 20%;
+    --secondary-foreground: 210 20% 96%;
+    --muted: 220 20% 18%;
+    --muted-foreground: 210 15% 60%;
+    --accent: 175 70% 50%;
+    --accent-foreground: 0 0% 100%;
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 210 80% 55%;
   }
 }
 
@@ -99,7 +121,177 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  /* Accessibility: Focus states */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Large touch targets for gloves */
+  .touch-target {
+    @apply min-h-[56px] min-w-[56px];
+  }
+
+  .touch-target-large {
+    @apply min-h-[72px] min-w-[72px];
+  }
+}
+
+@layer components {
+  /* Mode Cards */
+  .mode-card {
+    @apply relative overflow-hidden rounded-2xl p-6 transition-all duration-200;
+    @apply active:scale-[0.98] shadow-soft hover:shadow-elevated;
+  }
+
+  .mode-card-patient {
+    background: var(--patient-gradient);
+    @apply text-white;
+  }
+
+  .mode-card-staff {
+    background: var(--staff-gradient);
+    @apply text-white;
+  }
+
+  .mode-card-emergency {
+    background: var(--emergency-gradient);
+    @apply text-white shadow-critical;
+  }
+
+  /* Emergency Button */
+  .btn-emergency {
+    @apply relative font-bold text-lg rounded-2xl px-8 py-5;
+    background: var(--emergency-gradient);
+    @apply text-white shadow-critical;
+    @apply active:scale-[0.98] transition-transform duration-150;
+  }
+
+  /* Quick Action Buttons */
+  .quick-action {
+    @apply flex flex-col items-center justify-center gap-2 p-4 rounded-xl;
+    @apply bg-card border-2 border-border text-foreground;
+    @apply transition-all duration-150 active:scale-[0.97];
+    @apply hover:border-primary hover:bg-primary/5;
+    min-height: 80px;
+  }
+
+  .quick-action.critical {
+    @apply border-critical bg-critical/5 text-critical;
+  }
+
+  .quick-action.urgent {
+    @apply border-urgent bg-urgent/5;
+    color: hsl(var(--urgent-foreground));
+  }
+
+  /* Pain Scale */
+  .pain-scale-btn {
+    @apply flex items-center justify-center rounded-xl font-bold text-xl;
+    @apply min-w-[52px] min-h-[52px] transition-all duration-150;
+    @apply active:scale-95;
+  }
+
+  /* Privacy Banner */
+  .privacy-banner {
+    @apply flex items-center gap-2 px-4 py-2 rounded-lg;
+    @apply bg-success/10 text-success text-sm font-medium;
+  }
+
+  /* Camera Preview */
+  .camera-preview {
+    @apply relative w-full aspect-[3/4] rounded-2xl overflow-hidden;
+    @apply bg-foreground/5 border-2 border-dashed border-foreground/20;
+  }
+
+  /* Avatar Display */
+  .avatar-display {
+    @apply relative w-full aspect-square rounded-2xl overflow-hidden;
+    @apply bg-gradient-to-b from-primary/10 to-primary/5;
+    @apply border border-primary/20;
+  }
+
+  /* Symptom Chip */
+  .symptom-chip {
+    @apply inline-flex items-center gap-2 px-4 py-3 rounded-full;
+    @apply bg-card border-2 border-border text-foreground font-medium;
+    @apply transition-all duration-150 active:scale-[0.97];
+  }
+
+  .symptom-chip.selected {
+    @apply bg-primary border-primary text-primary-foreground;
+  }
+
+  .symptom-chip.critical {
+    @apply bg-critical border-critical text-critical-foreground;
+  }
+
+  /* Offline Indicator */
+  .offline-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full;
+    @apply bg-success/15 text-success text-xs font-semibold;
+  }
+
+  /* Body Diagram Touch Areas */
+  .body-touch-area {
+    @apply absolute rounded-full transition-all duration-150;
+    @apply hover:bg-primary/20 active:bg-primary/40;
+  }
+
+  .body-touch-area.selected {
+    @apply bg-critical/60;
+  }
+
+  /* Confidence Indicator */
+  .confidence-bar {
+    @apply h-2 rounded-full bg-muted overflow-hidden;
+  }
+
+  .confidence-bar-fill {
+    @apply h-full rounded-full transition-all duration-300;
+  }
+
+  /* Section Headers */
+  .section-header {
+    @apply text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3;
+  }
+
+  /* Pulse animation for critical states */
+  @keyframes pulse-critical {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  .pulse-critical {
+    animation: pulse-critical 1.5s ease-in-out infinite;
+  }
+
+  /* Vibrate animation hint */
+  @keyframes vibrate {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+  }
+
+  .vibrate-hint {
+    animation: vibrate 0.3s ease-in-out;
+  }
+}
+
+/* Safe area insets for mobile */
+@supports (padding: max(0px)) {
+  .safe-area-inset {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }
